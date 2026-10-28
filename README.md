@@ -64,14 +64,16 @@ Read in this order for the full picture:
 
 ## Architecture & design decisions
 
-Two pillars, held as equals.
+Two pillars, held as equals — each has a dedicated page:
+**[Frontend Architecture](docs/architecture/frontend-architecture.md)** ·
+**[Integration Architecture](docs/architecture/integration-architecture.md)**.
 
-**Frontend architecture**
+**Frontend architecture** — [full pillar page](docs/architecture/frontend-architecture.md)
 - [`demo/README.md`](demo/README.md) — the agentic + generative UI pattern in depth: readable context, tools as the only path to data, generative components rendered in-chat, and human-in-the-loop approval that pauses the agent run.
 - Design-system work — a published token set matched and re-implemented as primitives (`demo/src/components/ui/`, `demo/src/app/globals.css`).
 - [`docs/architecture/agentic-app-workshop-notes.md`](docs/architecture/agentic-app-workshop-notes.md) — the hard mobile problems designed before code: the versioned native component-catalogue contract, streaming transport choice (SSE / WebSocket / polling), and server-as-source-of-truth state.
 
-**Integration architecture**
+**Integration architecture** — [full pillar page](docs/architecture/integration-architecture.md)
 - [`.github/agents/senior-engineering-lead.agent.md`](.github/agents/senior-engineering-lead.agent.md) — the dual async pipeline, the CloudEvents envelope and correlation/causation model, saga selection (orchestration vs choreography), the Canonical Data Model, and the anti-corruption Bridge over legacy integration.
 - [`.github/agents/mobile-architect.agent.md`](.github/agents/mobile-architect.agent.md) — tri-platform (iOS / Android / Huawei HMS) deep-dives: HMS gap mitigation, device binding, push architecture.
 
@@ -120,9 +122,8 @@ Stated plainly — a standard that overstates itself earns no trust.
 
 Open decisions for the mobile reference are tracked as questions Q1–Q11 in the
 [workshop notes](docs/architecture/agentic-app-workshop-notes.md). On the roadmap:
-dedicated frontend- and integration-architecture pillar pages, the first ADRs (a new
-external dependency; streaming transport; the component-catalogue contract), and a
-written-up design-system and component-catalogue specification.
+the first ADRs (a new external dependency; streaming transport; the component-catalogue
+contract), and a written-up design-system and component-catalogue specification.
 
 ---
 
