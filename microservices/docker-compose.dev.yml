@@ -1,0 +1,11 @@
+# Development override: `docker compose -f docker-compose.yml -f docker-compose.dev.yml watch`
+services:
+  dotnet:
+    build:
+      target: development
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    develop:
+      watch:
+        - action: rebuild
+          path: ./dotnet/src

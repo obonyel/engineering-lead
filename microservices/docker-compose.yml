@@ -1,0 +1,10 @@
+services:
+  dotnet:
+    build:
+      context: ./dotnet
+      target: final
+    ports:
+      - "5001:8080"
+
+  # node:   add after following docs/node-setup.md
+  # go:     add after following docs/go-setup.md

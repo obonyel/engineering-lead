@@ -1,0 +1,317 @@
+openapi: "3.1.0"
+info:
+  title: "[Service Name] API"
+  version: "1.0.0"
+  description: |
+    [Brief description of this API's purpose and the bounded context it serves.]
+
+    **Layer:** Experience | Process | System
+    **Ownership:** Nedbank existing | ACN-enhanced | ACN-new
+    **CDM version:** [X.X]
+  contact:
+    name: "[Squad name]"
+    email: "[squad@bank.co.za]"
+  license:
+    name: "Proprietary — Internal Use Only"
+
+servers:
+  - url: "https://api-internal.bank.co.za/v1"
+    description: "Production"
+  - url: "https://api-staging.bank.co.za/v1"
+    description: "Staging"
+  - url: "http://localhost:8080/v1"
+    description: "Local development"
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: "[Resource name]"
+    description: "[Description of this resource group]"
+
+paths:
+  /[resources]:
+    get:
+      tags: ["[Resource name]"]
+      summary: "List [resources]"
+      operationId: "list[Resources]"
+      description: |
+        Returns a paginated list of [resources] for the authenticated user.
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/PageToken"
+      responses:
+        "200":
+          description: "Successful response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/[Resource]ListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      tags: ["[Resource name]"]
+      summary: "Create [resource]"
+      operationId: "create[Resource]"
+      description: |
+        Creates a new [resource]. This operation is idempotent — supply
+        X-Idempotency-Key to safely retry without duplicate creation.
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Create[Resource]Request"
+      responses:
+        "202":
+          description: "Request accepted — processing asynchronously"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/[Resource]"
+          headers:
+            Location:
+              description: "URL to poll for result"
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /[resources]/{id}:
+    get:
+      tags: ["[Resource name]"]
+      summary: "Get [resource] by ID"
+      operationId: "get[Resource]ById"
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Successful response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/[Resource]"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "OAuth 2.0 Bearer token. Scope: [required-scope]"
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: "Client-supplied correlation ID for distributed tracing"
+
+    IdempotencyKey:
+      name: X-Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: "Unique key for safe retries. Same key = idempotent no-op if already processed."
+
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+    PageToken:
+      name: pageToken
+      in: query
+      required: false
+      schema:
+        type: string
+      description: "Opaque token for cursor-based pagination"
+
+  schemas:
+    "[Resource]":
+      type: object
+      required:
+        - id
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: "CDM: [Entity.Id]"
+        status:
+          $ref: "#/components/schemas/[Resource]Status"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    "[Resource]Status":
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+      description: "CDM: [Entity.Status]"
+
+    "Create[Resource]Request":
+      type: object
+      required:
+        - "[required-field]"
+      properties:
+        "[required-field]":
+          type: string
+          description: "CDM: [Entity.Field]"
+
+    "[Resource]ListResponse":
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/[Resource]"
+        nextPageToken:
+          type: string
+          nullable: true
+        totalCount:
+          type: integer
+
+    ProblemDetails:
+      type: object
+      description: "RFC 9457 Problem Details"
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "https://api.bank.co.za/errors/insufficient-funds"
+        title:
+          type: string
+          example: "Insufficient Funds"
+        status:
+          type: integer
+          example: 422
+        detail:
+          type: string
+          example: "Account balance is insufficient for this transfer"
+        instance:
+          type: string
+          format: uri
+          example: "https://api.bank.co.za/requests/abc-123"
+        correlationId:
+          type: string
+          format: uuid
+        errorCode:
+          type: string
+          example: "INSUFFICIENT_FUNDS"
+
+  responses:
+    BadRequest:
+      description: "400 — Invalid request"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    Unauthorized:
+      description: "401 — Missing or invalid authentication"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    Forbidden:
+      description: "403 — Authenticated but not authorised"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    NotFound:
+      description: "404 — Resource not found"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    Conflict:
+      description: "409 — Idempotency key already used with different payload"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    UnprocessableEntity:
+      description: "422 — Business rule validation failure"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    TooManyRequests:
+      description: "429 — Rate limit exceeded"
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: "Seconds until rate limit resets"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+
+    InternalServerError:
+      description: "500 — Unexpected server error"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"

@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------------------
+# Root .gitignore — global safety net for the engineering-lead workbench.
+# Per-project ignores live in demo/, frontend/RNModule/, microservices/.
+# This file covers OS/editor cruft, secrets, and belt-and-suspenders catch-alls
+# so build output or dependencies can never leak into the portfolio repo.
+# ---------------------------------------------------------------------------
+
+# OS cruft
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# Secrets & local env (never commit real keys)
+.env
+.env.*
+!.env.example
+
+# Claude Code local overrides (keep shared settings.json, ignore local)
+.claude/settings.local.json
+
+# Dependencies (catch-all; subprojects also ignore their own)
+**/node_modules/
+**/vendor/
+
+# Build / cache output (catch-all)
+**/.next/
+**/dist/
+**/build/
+**/bin/
+**/obj/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
