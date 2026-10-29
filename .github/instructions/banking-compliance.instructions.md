@@ -1,45 +1,40 @@
 ---
-applyTo: "**/*.java,**/*.kt,**/*.ts,**/*.tsx,**/*.py,**/*.go,**/*.swift"
+applyTo: "**/*.ts,**/*.tsx,**/*.py,**/*.sql"
 ---
 
-# Banking Compliance Guardrails
+# Banking Compliance & Agentic Safety Guardrails
 
-## PCI-DSS (Card Data Security)
+## 1. PCI-DSS Scope Avoidance (Card Data Security)
 
-- NEVER generate code that stores, logs, or transmits raw PANs (Primary Account Numbers), CVVs, or full magnetic stripe data
-- Card data must only flow through explicitly PCI-scoped components — do not route card data through components outside PCI scope
-- Tokenize at the point of entry; use the payment tokenization service for all card references downstream
-- PCI DSS 6.4.3 (mandatory since March 2025): any JavaScript loaded in a WebView or browser payment page must be in an approved inventory with integrity hash verification
-- Do not use `console.log`, debug logging, or structured log fields that could capture card data
+- **NEVER** generate UI inputs, state stores, logs, or database columns that capture, transmit, or store raw 16-digit PANs (Primary Account Numbers), CVVs/CVCs, or full PINs.
+- Sahara Mzansi demo virtual cards store only tokenized display metadata (`card_token`, `last4`, `brand`, `expiry_month`, `expiry_year`, `is_frozen`).
 
-## PoPIA (Protection of Personal Information Act — South Africa)
+## 2. POPIA (Protection of Personal Information Act — South Africa)
 
-- All PII fields (national ID, passport, address, biometrics, financial data) require consent records before processing
-- Data residency: personal data of South African residents must be processed and stored within South Africa unless explicit cross-border transfer consent exists
-- Implement purpose limitation: only collect and process the minimum PII required for the declared purpose
-- Provide data subject access mechanisms (view, correct, delete) for all PII stores
+- Record explicit `popia_consents` (purpose, version, timestamp) before storing user identity or financial profile data.
+- Minimize prompt context: **never** inject raw 13-digit SA ID numbers, physical home addresses, or auth tokens into LLM/CrewAI system prompts or Tavily search queries. Pass masked/display identifiers (`"Nandi Rostova"`, `"nandi@capitec.shap"`, `last4`) to agents.
+- Enforce Row-Level Security (`ENABLE ROW LEVEL SECURITY`) on every user-scoped table in Supabase Postgres, tested for cross-user isolation.
 
-## Financial Regulation (NCA / FSCA)
+## 3. South African Financial Regulation (FICA / FAIS / FSCA)
 
-- Credit affordability assessments are required before any credit product (LENDING, CARDS) is presented as an offer
-- Investment product recommendations (INVEST, WEALTH) require FAIS compliance — do not generate personalised investment advice without FSCA-compliant disclosures
-- FICA KYC requirements: customer identity verification must be complete before any account or credit product is opened
+- **FICA Onboarding:** Perform deterministic 13-digit SA ID Luhn validation and status verification in the Process layer before transitioning an account to `ACTIVE`.
+- **FAIS Educational Boundary:** Sahara Mzansi is an unlicensed sandbox/demo super app. Agents (*Jabu*, *Kagiso*, *Thabo*) provide **financial literacy education, fee transparency, and user-directed cash-flow simulations**, never personalized regulated securities or credit advice. Include clear educational disclaimers on wealth projection cards.
+- **Retrieval Grounding:** Financial rates, tax-free savings limits, inflation figures, and PayShap rules surfaced by agents must be grounded in verified Supabase `pgvector` knowledge entries or domain-restricted Tavily searches — never fabricated from model weights.
 
-## Audit and Immutability
+## 4. Two-Phase Agentic & Biometric HITL Authorization
 
-- Every state-changing financial operation must emit an immutable audit event with: timestamp, actor identity, action type, resource ID, before/after state hash
-- Audit logs must be retained for a minimum of 7 years (South African bank regulatory requirement)
-- Audit log storage must be tamper-evident — use append-only stores; no UPDATE or DELETE on audit records
+- LLM reasoning is **never** an authorization mechanism.
+- Money-moving or mandate-changing actions (`stagePayment`, `proposeVaultSweep`, `stageDebitOrderBlock`, `createAutomationRule`) may only create a `PENDING_APPROVAL` record and trigger a native approval card on the Android client.
+- Execution occurs **only** when the authenticated user approves on the Android device (stepping up via Android `BiometricPrompt` for transfers above the `R500` threshold or new mandates) and calls `/v1/approvals/{id}/confirm` with a valid `X-Idempotency-Key`.
+- Recurring payment automations must specify a hard maximum amount, recipient lock, safe-float pre-check, and 1-tap user revocation at any time.
 
-## Authentication and Authorisation
+## 5. Immutable Ledger & Audit Trail
 
-- OAuth 2.0 with PKCE is required for all external API endpoints
-- mTLS is required for all service-to-service calls within the platform
-- Step-up authentication (OOBV via ENTERSEKT) is required for: new payee registration, transfers > R5,000, profile changes, card management actions
-- Session tokens must expire: access tokens max 15 minutes, refresh tokens max 24 hours for banking sessions
+- Store all monetary balances and ledger entries as integer cents (`BIGINT`). Every transfer writes balanced debit/credit `ledger_entries` rows inside an ACID transaction.
+- Every state-changing operation writes an append-only row to `audit_events` (`actor_id`, `actor_type` [`USER` | `AGENT_PROPOSED_USER_APPROVED` | `SYSTEM_RULE`], `action`, `resource_type`, `resource_id`, `before_hash`, `after_hash`, `correlation_id`, `created_at`).
+- `UPDATE` and `DELETE` privileges on `audit_events` and posted `ledger_entries` must be revoked from application roles.
 
-## Secrets and Credentials
+## 6. Secrets & Cost Protection
 
-- Zero secrets in source code or committed configuration files
-- All credentials must reference the secrets manager (Azure Key Vault / AWS Secrets Manager)
-- HSM-backed keys for cryptographic signing of payment transactions
+- Zero secrets in source code, `app.json`, or client bundles. Only the public `SUPABASE_ANON_KEY` may exist on the Android client; `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, and `TAVILY_API_KEY` remain strictly server-side.
+- Enforce per-user rate limits on `/api/copilotkit` and Tavily tool calls so automated abuse or prompt loops cannot breach the `$20/month` budget ceiling.

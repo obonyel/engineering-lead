@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Sahara Mzansi",
+    "slug": "sahara-mzansi",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "scheme": "saharamzansi",
+    "platforms": ["android"],
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "android": {
+      "package": "za.co.saharamzansi.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#944516"
+      },
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Sahara Mzansi to verify Human-in-the-Loop payments."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

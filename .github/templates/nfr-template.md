@@ -68,7 +68,7 @@
 | Audit log retention | 7 years minimum; tamper-evident; append-only |
 | Vulnerability scanning | SAST + DAST in CI/CD; critical CVEs patched within 24h |
 | Penetration testing | Annual external pen test; remediation within [N] weeks |
-| Step-up authentication | OOBV via ENTERSEKT for high-risk actions |
+| Step-up authentication | Hardware biometric prompt (`BiometricPrompt`) + two-phase HITL confirmation for money-moving actions |
 
 ---
 

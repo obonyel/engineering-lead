@@ -1,211 +1,109 @@
-# Integration Architecture
+# Integration & Agentic Backend Architecture
 
-**Pillar page — one of two equal pillars in this standard. See also
-[Frontend Architecture](frontend-architecture.md).**
+**Pillar page — one of two equal pillars in this standard. See also [Mobile Channel & Agentic UI Architecture](frontend-architecture.md).**
 
-This page defines how services, channels, and systems integrate under this standard: the
-layer model, the asynchronous event fabric, distributed-transaction patterns, the
-canonical data contract, and the authorization chain that keeps an agentic layer safe in a
-regulated domain. The full stack is encoded in the
-[senior-engineering-lead agent](../../.github/agents/senior-engineering-lead.agent.md) and
-enforced by the
-[architecture standards](../../.github/instructions/architecture-standards.instructions.md);
-this page is the human-readable rationale.
+This page defines how the Android client, the **CopilotKit + CrewAI** Experience layer, the **FastAPI** Process layer, and the **Supabase + Simulated Rail** System layer integrate cleanly without enterprise middleware sprawl — staying strictly inside our **`<= $20/month`** FinOps ceiling.
+
+Governing ADRs: [ADR-002](../decisions/ADR-002-adopt-copilotkit-react-native-headless-and-ag-ui.md), [ADR-003](../decisions/ADR-003-orchestrate-agents-with-crewai-flows-gemini-and-tavily.md), [ADR-004](../decisions/ADR-004-use-supabase-postgres-ledger-and-auth.md), [ADR-005](../decisions/ADR-005-enforce-biometric-hitl-and-twenty-dollar-finops-cap.md).
 
 ---
 
-## Principles
+## 1. Architectural Principles
 
-1. **Three layers, strictly separated.** Experience = channel adaptation. Process =
-   business logic, sagas, and the canonical model. System = thin adapters to systems of
-   record. Logic in the wrong layer is a defect.
-2. **The Canonical Data Model is law.** Everything crossing a service boundary speaks CDM.
-   No consumer knows a provider's internal schema; no point-to-point coupling between
-   providers.
-3. **Legacy integration is read-only.** New capability routes through an anti-corruption
-   **Bridge** and the Process layer — never by adding logic to the legacy ESB.
-4. **Every state change is idempotent and audited.** Idempotency keys on all
-   state-mutation calls; an immutable audit event on every state-changing operation.
-5. **The agentic layer is not self-authorizing.** An LLM tool call carries no privilege of
-   its own; it traverses the same authorization chain as any other caller.
-6. **Decisions are executable and recorded.** New dependencies, lock-in choices, and any
-   deviation from these standards require an [ADR](../decisions/ADR-000-index.md) before
-   implementation.
+1. **Strict Layer Separation Without Microservice Sprawl:** Experience, Process, and System responsibilities are strictly separated by module boundaries, never collapsed into client code or bloated into multi-language Kubernetes/Kafka clusters.
+2. **Canonical Data Model (CDM-Lite) at Adapter Seams:** All monetary amounts use integer cents (`BIGINT` / `amount_cents: int`), and simulated external rails (`PayShap`, `FICA`, `Utilities`) sit behind clean adapter interfaces.
+3. **Single-Database ACID Ledger Integrity:** Because accounts, vaults, staged approvals, idempotency keys, and audit logs live in one Supabase Postgres database, transfers execute inside a single `SERIALIZABLE` / `FOR UPDATE` SQL transaction — eliminating distributed saga drift.
+4. **Two-Phase Agentic & Biometric HITL Chain:** CrewAI agents can **propose and stage** (`PENDING_APPROVAL`), never execute. Only a biometric-verified user request to `/v1/approvals/{id}/confirm` commits ledger entries.
+5. **Grounded Financial Intelligence:** Rates, tax-free thresholds, and fee rules are retrieved from `pgvector` and domain-restricted **Tavily Search** (`resbank.co.za`, `fsca.co.za`, `sars.gov.za`, `gov.za`), cached for 24 hours to preserve free-tier quotas.
 
 ---
 
-## The three layers
+## 2. Responsibility Matrix Across Layers
 
-| Layer | Contains | Must not contain |
-|---|---|---|
-| **Experience** | Channel aggregation, BFF shaping, protocol translation, UI permissions, real-time event routing | Business rules, financial calculations, eligibility logic, saga state |
-| **Process** | Business logic, sagas, CDM models, domain handlers, workflow state, back-pressure | Channel-specific formatting, mobile/web payload shapes, connection management |
-| **System** | CDM adapters, system-of-record integration, security enforcement | Orchestration, channel concerns, cross-provider joins |
-
-The agentic and frontend concerns live in the **Experience** layer — which is why the
-[frontend pillar](frontend-architecture.md) insists the model only *proposes*, and all
-business validation happens deeper, in Process.
+| Layer | Runtime / Location | Owns | Forbidden Here |
+|---|---|---|---|
+| **Experience** | `backend/copilot-runtime/` (Node 22) + `backend/app/agents/` (Python CrewAI) | AG-UI streaming, JWT verification, rate limiting, `Flow[SaharaAgentState]` (`CopilotKitState`), `copilotkit_emit_state` progress pills, Tavily + `pgvector` literacy retrieval | Direct SQL ledger writes, floating-point currency math, bypassing HITL approval |
+| **Process** | `backend/app/process/` (`FastAPI` `/v1/*`) | FICA 13-digit SA ID validation, safe-float & budget checks, staged approvals, `X-Idempotency-Key` deduplication, bounded recurring schedules, double-entry ledger commits | React Native layout logic, raw third-party wire schemas |
+| **System** | `backend/app/system/` + `Supabase` | Postgres schema + RLS, `Supabase Auth`, `pgvector`, `pg_cron`, append-only `audit_events`, CDM-lite simulated rail adapters | Multi-step workflow orchestration, UI formatting |
 
 ---
 
-## The dual asynchronous pipeline
+## 3. Dual Communication Paths: AG-UI Stream + REST Process API
 
-A channel-to-backend interaction takes one of two transport paths, chosen explicitly per
-feature rather than defaulting to REST:
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as Android App (@copilotkit/react-native/headless)
+    participant RT as CopilotRuntime v2 (/api/copilotkit)
+    participant Flow as CrewAI Flow (Jabu · Kagiso · Thabo)
+    participant Tav as Tavily + pgvector
+    participant API as FastAPI Process Layer (/v1/*)
+    participant DB as Supabase Postgres (ACID Ledger)
 
-```
-Channel (SDK)
-      |
-  API Gateway        TLS termination, OAuth 2.0 verification, routing, rate limiting
-      |
- Channel Adapter     translates CloudEvents AND REST to/from CDM; dedupes by event id
-      |
-   ROUTER            inspects message type + device state
-    /      \
-Secure      HTTP Secure
-Pipeline    Pipeline
-(async)     (hybrid)
-    |            |
-WebSocket     Handler / Saga
-+ Push            |
-    |         Process APIs
- Kafka  <——————>  Kafka
+    App->>RT: User prompt + Bearer JWT (AG-UI HTTP Stream)
+    RT->>Flow: Forward authenticated turn (/copilotkit)
+    Flow-->>App: copilotkit_emit_state ("Resolving Mom's ShapID & safe float...")
+    Flow->>API: Read portfolio, recipient & rail fees
+    opt Financial Literacy / Rate Query
+        Flow->>Tav: Domain-restricted search (resbank / fsca / sars)
+    end
+    Flow->>API: POST /v1/approvals/stage (creates PENDING_APPROVAL)
+    API->>DB: INSERT approval_requests (PENDING_APPROVAL) + audit_events
+    Flow-->>App: Render TransferSynthesisCard & pause at BiometricClearanceGate
+    Note over App: User reviews & completes Android BiometricPrompt
+    App->>API: POST /v1/approvals/{id}/confirm + Bearer JWT + X-Idempotency-Key
+    API->>DB: BEGIN TX -> check idempotency -> debit/credit ledger_entries -> update envelope -> INSERT audit_events -> COMMIT
+    API-->>App: 200 OK (settled receipt + PSH-ZA reference)
+    App->>RT: Tool response ("Accepted", receipt ref)
+    RT->>Flow: Resume CrewAI Flow -> emit PayShapSettlementReceipt
 ```
 
-**Secure pipeline (async CloudEvents)** — payment status streaming, offer/NBA delivery,
-fraud alerts, and any saga whose interim status should reach the device. Delivery is over
-a persistent WebSocket when the app is foregrounded, with push (FCM / APNs / HMS Push Kit)
-as the background fallback.
-
-**HTTP Secure pipeline (hybrid)** — balance queries, catalogue reads, auth flows, and any
-operation where the client expects an immediate synchronous response, or where the
-WebSocket is unavailable.
-
-### Trade-offs
-
-| Dimension | Secure (async) | HTTP (hybrid) |
-|---|---|---|
-| Latency to first response | Higher (event round-trip) | Lower (direct response) |
-| Client complexity | Higher (WebSocket lifecycle + correlation) | Lower (standard HTTP) |
-| Server scalability | Better (stateless producers; state in Redis) | Standard |
-| Debuggability | Harder (causal chain across events) | Easier (one request/response trace) |
-| Offline / background | Native (push fallback) | Needs polling or push wrapper |
-| Audit trail | Excellent (every event immutable in Kafka) | Good (request/response logged) |
-
-Picking a path is an explicit, recorded decision — see the async pre-design questions in
-the [agent definition](../../.github/agents/senior-engineering-lead.agent.md).
+### Why Two Paths Work Together Cleanly
+- **AG-UI Stream (`/api/copilotkit` $\rightarrow$ `/copilotkit`):** Carries natural-language turns, `CopilotKitState` progress updates (`logs`, `canvas_logs`), and generative UI tool calls (`useRenderTool`).
+- **REST Process API (`/v1/*`):** Serves deterministic reads (dashboard hydration, FICA onboarding) and **biometric-confirmed mutations** (`/v1/approvals/{id}/confirm`) where standard HTTP status codes, RFC 9457 Problem Details, and `X-Idempotency-Key` headers provide rock-solid auditability.
 
 ---
 
-## CloudEvents: envelope and causality
+## 4. CrewAI `CopilotKitState` Design
 
-Every message on the async pipeline conforms to the CNCF CloudEvents v1.0 envelope:
+Extending `CopilotKitState` allows the Python backend to stream structured state directly into the Android app before, during, and after tool execution:
 
-| Field | Role |
-|---|---|
-| `id` | Globally unique per event; the Channel Adapter uses it for **idempotency deduplication** — a retried send is a no-op |
-| `type` | `{org}.{domain}.{entity}.{verb}`, e.g. `za.co.bank.payments.transfer.initiate` |
-| `correlationid` | Set on the originating command; carried by every downstream event so the client can match responses to commands |
-| `causationid` | Set to the `id` of the event that directly caused this one — enables causal-chain tracing without a central orchestrator |
+```python
+from typing import Any, Dict, List, Optional
+from copilotkit.crewai import CopilotKitState
 
-**Errors are events, not HTTP codes.** On the async path, failures arrive as typed events
-— `*.rejected` (validation), `*.failed` (business rule), `*.compensated` (saga rollback),
-`*.timed_out`, `*.error` — delivered back over the pipeline. A client must never assume
-success after sending a command; it subscribes to the response type and handles each
-failure variant. This is the integration contract behind the frontend's
-"[design for agentic failure](frontend-architecture.md#designing-for-agentic-failure)".
 
-**Replay.** On reconnect, the client sends `session.resume` with its last `correlationid`;
-the backend replays missed events in order (default window 30 min; payment-critical 24 h),
-backed by Redis Streams for short-lived replay and Kafka compaction for durable recovery.
-
----
-
-## Distributed transactions: sagas
-
-Multi-step operations that span services use sagas, with compensation declared **before**
-implementation.
-
-| | Orchestration | Choreography |
-|---|---|---|
-| Coordinator | Explicit | None — Kafka event chain |
-| Best for | Complex compensation; 3+ services; regulatory audit required | High-throughput, loosely-coupled, simple chains |
-| Examples | Loan origination, FX transfer, account opening | Balance-update notification, statement trigger |
-| Visibility | Central, easy to reason about | Emergent; needs distributed tracing |
-
-Hybrid is valid; the choice is recorded in an ADR. Every saga participant is **idempotent**
-(checks its key before processing), and every failure path has a declared compensating
-transaction and a dead-letter topic (`{original-topic}.dlq`) with mandatory alerting.
-
----
-
-## Canonical Data Model & the anti-corruption Bridge
-
-- **CDM** is the single cross-system schema. Each provider has exactly one CDM adapter in
-  the System layer; internal schemas never escape it. CDM changes require backward-
-  compatibility validation, a Schema Registry PR, and advance notice to consumers.
-- **The Bridge** is the anti-corruption layer over legacy integration (IBM ESB /
-  DataPower): it owns JSON↔SOAP/XML translation and protocol mediation so modern services
-  never learn SOAP/MQ internals, and the legacy fabric gains no new business logic. All new
-  capability routes through Bridge + Process APIs.
-- **Kafka** is the durable backbone: event log, the Outbox pattern for reliable publish,
-  the choreography bus, and a Schema Registry (Avro) that enforces CDM. Topic naming:
-  `{domain}.{entity}.{event}`.
-
----
-
-## The agentic authorization chain
-
-The integration-critical rule for an agentic product: **an LLM tool call is just another
-caller.** Every agent-triggered action that changes state must traverse, in order:
-
-```
-OAuth scope validation → consent record check → fraud risk score
-    → idempotency-key deduplication → execute → immutable audit event
+class SaharaAgentState(CopilotKitState):
+    """Shared state streamed between CrewAI Flows and the Android AG-UI client."""
+    active_agent: str = "jabu"  # jabu | kagiso | thabo
+    logs: List[Dict[str, str]] = []
+    canvas_logs: Dict[str, str] = {"title": "", "subtitle": ""}
+    staged_approval: Optional[Dict[str, Any]] = None
+    literacy_sources: List[Dict[str, str]] = []
 ```
 
-No step may be skipped on the grounds that "the model decided." The frontend's
-human-in-the-loop approval ([frontend pillar](frontend-architecture.md)) sits *in front
-of* this chain for consequential actions; the chain itself is the backend guarantee. The
-MCP server that exposes banking tools to agents enforces OAuth 2.1 + PKCE on every call.
+Each Flow step updates `self.state.canvas_logs` and awaits `copilotkit_emit_state(self.state)` so the user sees transparent, calm telemetry (*"Comparing PayShap R0 rail vs EFT RTC..."*) rather than an opaque spinner.
 
 ---
 
-## Resilience, observability & audit
+## 5. The 6-Step Agentic & Biometric Authorization Chain
 
-- **Resilience:** circuit breakers (Resilience4j) with explicit timeout budgets on every
-  downstream call, bounded queues, consumer throttling, and dead-letter queues for
-  reconciliation.
-- **API contract:** URL-path versioning (`/v1/`), spec-first OpenAPI 3.1, mTLS
-  service-to-service, OAuth 2.0 + PKCE for external APIs, idempotency keys on all
-  state-mutation endpoints, RFC 9457 Problem Details for errors.
-- **Observability:** structured JSON logs carrying `correlationId` / `traceId` / `spanId`,
-  OpenTelemetry tracing across every hop, RED metrics per endpoint, SLO dashboards before
-  production, and an alert→runbook link for every alert.
-- **Audit:** every state-changing operation emits an immutable audit event — a regulatory
-  requirement, and the reason the async pipeline's Kafka log is a first-class asset.
+Every state-changing financial operation must pass all six checks in `backend/app/process/` in order:
 
----
-
-## Reference map
-
-| Concern | Source |
-|---|---|
-| Full encoded stack, pipelines, sagas, auth chain | [`senior-engineering-lead.agent.md`](../../.github/agents/senior-engineering-lead.agent.md) |
-| Mobile / tri-platform integration | [`mobile-architect.agent.md`](../../.github/agents/mobile-architect.agent.md) |
-| Layer, CDM, API, saga, observability rules | [`architecture-standards.instructions.md`](../../.github/instructions/architecture-standards.instructions.md) |
-| Regulated-domain guardrails | [`banking-compliance.instructions.md`](../../.github/instructions/banking-compliance.instructions.md) |
-| API contract template (OpenAPI 3.1) | [`.github/templates/api-contract-template.yaml`](../../.github/templates/api-contract-template.yaml) |
-| Decisions | [`docs/decisions/`](../decisions/ADR-000-index.md) |
+```
+1. Supabase JWT Verification (valid session, matching user_id)
+2. Domain & Guardrail Validation (FICA active, safe float respected, envelope/mandate caps checked)
+3. Human-in-the-Loop Clearance Check (approval_requests row exists, unexpired, confirmed by user)
+4. Idempotency Deduplication (X-Idempotency-Key checked in idempotency_keys)
+5. Atomic Double-Entry Ledger Execution (balanced debit + credit in BIGINT cents)
+6. Append-Only Audit Event (immutable row with before/after state SHA-256 hashes)
+```
 
 ---
 
-## Open decisions (ADRs to write)
+## 6. Bounded Payment Automation (`pg_cron` + Safe-Float Pre-Check)
 
-- **New external dependency** (e.g. the data/auth backing store for the agentic reference) —
-  required before adoption per the standards.
-- **Pipeline path** for each new channel feature — async CloudEvents vs HTTP hybrid.
-- **Saga style** per domain flow — orchestration vs choreography.
-
-See the [workshop notes](agentic-app-workshop-notes.md) and the
-[ADR index](../decisions/ADR-000-index.md).
+Users can ask *Jabu* (or tap Screen 8's **Automate Monthly** button) to create a recurring rule (e.g., *"Send R1,500 to Mom every 25th"* or *"Sweep idle cash above R10,000 into my 8.25% Notice Stash"*):
+1. Creating the rule itself requires a **Screen 7 Biometric HITL confirmation** locking the recipient, ceiling (`<= R2,000/mo`), and schedule.
+2. When `pg_cron` triggers a due rule, the Process layer runs **safe-float and balance pre-checks** first.
+3. For demo transparency and safety, scheduled runs stage a ready-to-approve clearance card (or execute strictly within an explicit user-signed micro-mandate ceiling) and remain **1-tap revocable** from the Dashboard at any time.

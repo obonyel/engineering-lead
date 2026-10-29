@@ -16,7 +16,7 @@
 - [ ] Problem and options stated; recommendation given
 - [ ] Layers and boundaries clear (Experience / Process / System); no business logic in the client
 - [ ] Integration Architect reviewed contracts, sagas/compensation, idempotency, timeouts, back-pressure
-- [ ] Frontend Architect reviewed client impact, supported app versions, platform parity (iOS, Android, Huawei)
+- [ ] Frontend/Mobile Architect reviewed client impact, supported Android versions, and native Generative UI catalogue compatibility
 - [ ] Security threat model done; data classification and consent flows covered
 - [ ] NFRs specified and testable; observability designed in
 - [ ] Failure modes and fallback behaviour documented
@@ -31,7 +31,7 @@
 - [ ] Security review and pen-test findings dispositioned
 - [ ] Contracts backward compatible; consumers notified
 - [ ] Backend deployed before client; feature flags and kill-switches ready
-- [ ] App-store submission timing planned (iOS, Android, Huawei AppGallery)
+- [ ] Android distribution timing planned (Firebase App Distribution / Google Play)
 - [ ] Rollback plan tested; data migration reversible or reconciled
 - [ ] Runbook, dashboards, alerts and on-call in place; Operations briefed
 - [ ] Change approval obtained; outside freeze window

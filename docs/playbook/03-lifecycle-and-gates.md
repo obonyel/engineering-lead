@@ -35,7 +35,7 @@ Each phase lists purpose, lead, key activities, artifacts (templates in `.github
 - **G2 per increment:** DoD met; contracts unchanged or versioned; no new unmanaged high risks.
 
 ## Phase 3: Verify
-- Functional, contract, end-to-end, performance, resilience (failure injection on provider timeouts), security testing, accessibility, device matrix (iOS, Android, Huawei).
+- Functional, contract, end-to-end, performance, resilience (failure injection on provider timeouts), security testing, accessibility, Android target device matrix.
 - UAT with BA and business.
 - **G3 exit:** exit criteria in test strategy met; high/critical defects closed or formally accepted; pen-test findings dispositioned.
 

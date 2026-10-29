@@ -11,12 +11,12 @@ The first question is always: **what already exists here?** The answer decides w
 | **Greenfield** | New product, no legacy to honour | New super-app vertical (e.g. a new lifestyle/rewards journey) on the existing platform, or the platform's first release |
 | **Brownfield** | Changing or extending a live system | New feature in an existing journey; add a channel to an existing process API |
 | **Bluefield** | New build alongside or inside existing estate; reuses some parts, replaces others | New Experience API on existing Process and System layers; new mobile module in an existing app shell |
-| **Modernisation / strangler** | Incrementally replacing a legacy capability | Moving ESB/DataPower flows to Kraken process APIs, one route at a time |
-| **Migration / replatform** | Same function, different platform | Moving workloads to a new Azure landing zone; SDK major-version upgrade |
-| **Provider onboarding** | Connecting a new provider system | Add a new payments, insurance or investment provider behind the bridge |
+| **Modernisation / strangler** | Incrementally replacing a legacy capability | Moving legacy integration flows behind clean Process APIs and CDM adapters, one route at a time |
+| **Migration / replatform** | Same function, different platform | Moving workloads to a new cloud environment; major runtime or SDK upgrade |
+| **Provider onboarding** | Connecting a new provider system | Add a new payments (e.g. PayShap), KYC (FICA), or utility provider behind a System-layer adapter |
 | **Regulatory / compliance-driven** | Deadline set by regulator | Mandated authentication, consent, or reporting change |
 | **Remediation / incident-driven** | Fixing something broken or risky | Post-mortem actions, audit findings, vulnerabilities |
-| **Vendor / COTS integration** | Buying and configuring rather than building | MARTECH (AEP, AJO, AEM) configuration |
+| **Vendor / COTS integration** | Buying and configuring rather than building | Third-party SaaS / API provider integration |
 | **Inherited / rescue** | Taking over a team or codebase mid-flight | Taking over a stalled workstream |
 
 Many engagements are hybrids. Pick the dominant type, then add the extra alignments of the secondary one.

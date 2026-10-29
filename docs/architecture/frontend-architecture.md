@@ -1,192 +1,101 @@
-# Frontend Architecture
+# Mobile Channel & Agentic UI Architecture
 
-**Pillar page — one of two equal pillars in this standard. See also
-[Integration Architecture](integration-architecture.md).**
+**Pillar page — one of two equal pillars in this standard. See also [Integration Architecture](integration-architecture.md).**
 
-This page defines how the frontend of an agentic application is architected under this
-standard: the composition of an in-app agent, the UI that renders its actions, the
-contract between model and app, and the cross-platform strategy. It is grounded in a
-working reference — the agentic web app in [`frontend/web/`](../../frontend/web/README.md) — and extended
-to the mobile channel in [`frontend/mobile/`](../../frontend/README.md).
+This page defines how the **Sahara Mzansi** Android mobile client is architected: how an in-app AI copilot connects over **AG-UI**, renders **native Generative UI** without WebViews, synchronizes real-time `CrewAI` workflow state, and enforces **hardware biometric Human-in-the-Loop (HITL)** clearance before any money moves.
 
-The frontend sits in the **Experience layer**. Under the
-[architecture standards](../../.github/instructions/architecture-standards.instructions.md),
-that layer performs channel adaptation and presentation only — **it holds no business
-rules**. For an agentic frontend this is the central constraint: the model may *propose*
-and *present*, but every state change travels through a validated path, never a direct
-write from the model or the UI.
+Visual reference: [`docs/designs/sahara-mzansi/README.md`](../designs/sahara-mzansi/README.md) (8 Stitch mobile screens).  
+Governing ADRs: [ADR-001](../decisions/ADR-001-target-android-only-expo-channel.md), [ADR-002](../decisions/ADR-002-adopt-copilotkit-react-native-headless-and-ag-ui.md), [ADR-005](../decisions/ADR-005-enforce-biometric-hitl-and-twenty-dollar-finops-cap.md).
 
 ---
 
-## Principles
+## 1. Core Principles
 
-1. **Tools are the only path to data.** The model never reaches state directly. It reads
-   through declared *readable context* and writes only through declared *actions* (tools),
-   each of which is a typed, validated call. This is the frontend half of the agentic
-   authorization chain owned by the [integration pillar](integration-architecture.md).
-2. **The agent answers from real app state.** Readable context exposes the live catalogue,
-   filters, cart, checkout progress, and last order — so the model reasons over what the
-   user actually sees, not a stale copy.
-3. **Humans approve consequential actions.** Any action that spends money or is otherwise
-   irreversible **pauses the agent run** for explicit user approval. A model can never
-   approve on the user's behalf.
-4. **Generative UI stays in sync with the app.** Components rendered inside the chat read
-   the same store as the page, so chat and screen never diverge.
-5. **The design system is architecture, not styling.** Tokens and primitives are a
-   contract shared by the app and the agent's generative components.
-6. **The server is the source of truth once data is real.** Local state is a demo
-   convenience; the production pattern treats the backend as authoritative and the client
-   as a cache with loading, retry, and conflict states.
+1. **Android-Only Native Focus:** We target Android exclusively via **React Native + Expo** (`mobile/`). Web/PWA, iOS, and secondary mobile app stores are descoped so every component renders into native Android primitives (`View`, `Text`, `Pressable`, `BiometricPrompt`) with `$0` distribution fees.
+2. **Experience Layer Discipline:** The mobile app and its agent hooks hold **zero business rules or financial math**. All balances arrive as integer cents from the Process API, and every write goes through validated `/v1/*` endpoints.
+3. **Tools & Staged Proposals Are the Only Path to Action:** The agent reads sanitized screen context and invokes typed tools. Consequential tools **stage** a `PENDING_APPROVAL` record and pause — a model can never approve or execute a transfer on the user's behalf.
+4. **Versioned Native Component Catalogue:** Because React DOM does not exist on React Native, generative UI works by mapping typed tool calls (`useRenderTool`) to a curated, versioned catalogue of native Sahara Mzansi cards sharing one design-token contract.
+5. **Server Is the Single Source of Truth:** Supabase Postgres (via FastAPI Process endpoints) owns accounts, vaults, beneficiaries, staged approvals, and ledger entries. The mobile app caches server state with explicit loading, retry, and error states.
 
 ---
 
-## The agentic UI pattern
+## 2. `@copilotkit/react-native/headless` & Hermes Setup
 
-The reference implementation
-([`frontend/web/src/components/copilot/CopilotActions.tsx`](../../frontend/web/src/components/copilot/CopilotActions.tsx))
-composes three primitives from the agent runtime (CopilotKit v1 here; the pattern is
-runtime-agnostic):
+Integrating AG-UI streaming into React Native on Hermes requires two strict architectural rules ([ADR-002](../decisions/ADR-002-adopt-copilotkit-react-native-headless-and-ag-ui.md)):
 
-### 1. Readable context — what the model can see
-`useCopilotReadable` exposes live, typed slices of state to the model: the signed-in user,
-the product catalogue, the current filters, the cart and its totals, checkout progress,
-and the most recent order. The model reasons over these directly, so it never guesses at
-app state.
+### 2.1 Entry-Point Polyfill Ordering (`mobile/index.js`)
+Hermes omits Web streaming APIs (`ReadableStream`, `TextEncoder`) and Web Crypto (`crypto.getRandomValues`). CopilotKit's polyfill falls back permanently to insecure `Math.random` unless a native CSPRNG claims `crypto.getRandomValues` first:
 
-### 2. Actions — what the model can do
-`useCopilotAction` declares each tool the model may call, with typed parameters and a
-handler that performs a *validated* mutation of app state:
+```ts
+// mobile/index.js — ORDER IS SECURITY-CRITICAL
+import "react-native-get-random-values"; // Line 1: native Android CSPRNG claims crypto.getRandomValues
+import "@copilotkit/react-native/polyfills"; // Line 2: streaming & encoding polyfills for AG-UI
+import { registerRootComponent } from "expo";
+import App from "./src/App";
 
-| Tool | Effect | Read / Write |
-|---|---|---|
-| `searchProducts` | Filters the catalogue, drives the products page, navigates | Read |
-| `addToCart` / `removeFromCart` | Mutates the cart (with stock clamping) | Write |
-| `showCart` | Renders the live cart | Read |
-| `startCheckout` | Begins checkout, optionally picks delivery — **does not place the order** | Write |
-| `placeOrder` | Places and pays — **gated by human approval** | Write (approval) |
-| `showOrderConfirmation` | Renders the confirmation | Read |
+registerRootComponent(App);
+```
 
-The split between `startCheckout` (safe) and `placeOrder` (consequential) is deliberate:
-the agent can walk the user right up to the point of spending money, but not across it.
+### 2.2 Headless Import Surface Only
+Metro bundles every dependency reachable from an entry barrel. Importing the root `@copilotkit/react-native` barrel pulls in `useAttachments` and breaks release builds with `Unable to resolve module expo-document-picker`.
+- **Rule:** Import exclusively from `@copilotkit/react-native/headless` (`CopilotKitProvider`, `useRenderTool`, `useFrontendTool`, `ToolCallStatus`, state/context hooks).
+- **Benefit:** Zero unwanted native dependencies and 100% visual alignment with Sahara Mzansi's Stitch screens.
 
-### 3. Generative UI — what the model draws
-Each action's `render` returns a React component into the chat: product cards with
-"Add" buttons, a live cart summary, an order summary, and a payment confirmation. A
-`Thinking` placeholder shows while an action runs. Because these components read the same
-store as the page, the chat and the screen are always consistent.
-
-### 4. Human-in-the-loop approval
-`placeOrder` uses `renderAndWaitForResponse`: it renders an **approval card** (total,
-delivery, saved card) and **the agent run pauses** until the user clicks *Approve & pay*
-or *Cancel*. The user's decision is returned to the model as the tool result, so the model
-learns the outcome. The order is placed **only on approval**. This is the frontend
-realisation of the rule that *LLM reasoning is not an authorization mechanism*.
+### 2.3 Android Runtime Connectivity
+- **Android Emulator:** Connects to local Docker backend via `http://10.0.2.2:8200/api/copilotkit` and `http://10.0.2.2:8000/v1`.
+- **Physical Android Device:** Uses debug-only cleartext LAN routing during local development and enforces `https://` (TLS 1.3 via Cloudflare $\rightarrow$ Cloud Run) in staging/production builds.
 
 ---
 
-## Design system as architecture
+## 3. End-to-End Mobile Screen & Generative UI Map
 
-The reference app matches a published design system (*Atomic UI*) at the token level —
-colour, typography, radii, spacing, and shadows — in
-[`frontend/web/src/app/globals.css`](../../frontend/web/src/app/globals.css), and re-implements the
-primitives (Button, Card, Badge, Input, Select) in
-[`frontend/web/src/components/ui/`](../../frontend/web/src/components/ui/). Theming is token-driven
-(`data-theme`), so dark/light and brand changes are a token swap, not a component rewrite.
+The Android app implements the 8 **Sahara Mzansi** screens (`docs/designs/sahara-mzansi/`):
 
-Why this matters for an *agentic* frontend: the agent's generative components and the
-page components draw from the **same token contract**. Without a shared design system, UI
-rendered by the model drifts visually from the app. The design system is therefore a
-precondition for trustworthy generative UI, not a cosmetic afterthought.
+### 3.1 Registration & Post-Login Landing Flow (Screens 1–4)
+1. **Screen 1 — `WelcomeAuthScreen`:** Value carousel (*8.4% APY Rand Stashes*, *Debit Order Sentinel*), `+27` mobile / email OTP & Google sign-in via Supabase Auth.
+2. **Screen 2 — `FicaVerificationScreen`:** Smart ID / Green Book / Passport selector, live 13-digit SA ID check-digit & DOB preview (verified server-side), POPIA consent capture, and Android biometric opt-in.
+3. **Screen 3 — `CardAndShapSetupScreen`:** Tokenized Platinum virtual card activation (`last4` only), `@sahara.shap` proxy ID registration, and opening simulated Rand deposit (`R100`–`R1,000`).
+4. **Screen 4 — `SuperAppDashboardScreen` (Landing Page):** Consolidated Net Worth (`R248,500.00`), quick rail triggers (`PayShap`, `EFT Send`, `Power & Air`, `FX Swap`), live **Mzansi Agent Fleet** cards (*Jabu*, *Kagiso*, *Thabo*), **Smart Vaults** progress, Virtual Card quick-freeze, utility meters, and recent ledger activity.
 
----
+### 3.2 Native Generative UI Catalogue (`useRenderTool` — Screens 5–8)
 
-## State and source of truth
+```tsx
+import { ToolCallStatus, useRenderTool } from "@copilotkit/react-native/headless";
+import { z } from "zod";
 
-The reference uses a reducer persisted to `localStorage`
-([`frontend/web/src/lib/store.tsx`](../../frontend/web/src/lib/store.tsx)) with one agentic-specific
-detail: a synchronous `getSummary()` read path, because action handlers must observe the
-*latest* state, not a render-time snapshot. Stock is clamped in the reducer so neither the
-user nor the model can over-order.
+useRenderTool({
+  name: "renderTransferSynthesis",
+  description: "Render interactive PayShap vs EFT transfer synthesis card with safe-float check.",
+  parameters: z.object({
+    approvalId: z.string().uuid(),
+    recipientName: z.string(),
+    shapId: z.string(),
+    amountCents: z.number().int().positive(),
+    safeFloatRemainingCents: z.number().int(),
+    budgetUsedPct: z.number(),
+  }),
+  render: ({ args, status }) => (
+    <TransferSynthesisCard
+      data={args}
+      pending={status !== ToolCallStatus.Complete}
+    />
+  ),
+});
+```
 
-This is a demo convenience. The standard's production stance is **server-as-source-of-truth**
-(see the [workshop notes](agentic-app-workshop-notes.md)): once the cart and orders live in
-a backing store, the client becomes a cache and must handle loading, retry, and conflict —
-and every write carries an idempotency key so a retried request, or a model that repeats a
-tool call, cannot place two orders.
-
----
-
-## Cross-platform & the mobile channel
-
-The web demo proves the pattern; the mobile channel
-([`frontend/mobile/`](../../frontend/README.md), React Native 0.88) is where the hard
-frontend-architecture decisions live. They are being designed before implementation in the
-[workshop notes](agentic-app-workshop-notes.md):
-
-- **Generative UI does not port directly.** Rendering React components inside a web chat
-  has no React Native equivalent. The pattern is a **versioned catalogue of native
-  components** (product card, cart summary, order summary, approval card): the agent
-  returns a *component name plus typed data*, and the app renders it. That catalogue is a
-  **contract between model and app, and must be versioned** — a frontend-architecture
-  concern of the first order.
-- **Streaming transport is an explicit choice.** Web used the runtime over HTTP; React
-  Native needs a decision between SSE, WebSocket, and a polling fallback, with reconnection
-  and partial-render handling. Trade-offs below.
-- **Tri-platform is the default.** iOS + Android + Huawei HMS. Google-service gaps on HMS
-  are handled by a factory abstraction (see the
-  [mobile-architect agent](../../.github/agents/mobile-architect.agent.md)), not by
-  branching in feature code.
-
-### Streaming transport trade-offs
-
-| Dimension | SSE | WebSocket | Polling (fallback) |
+| Catalogue Component (`v1`) | Stitch Ref | Triggered By | UX Behaviour |
 |---|---|---|---|
-| Token/partial streaming | Good (native server-push) | Good (bidirectional) | Poor (interval latency) |
-| Client complexity | Low | Higher (lifecycle, reconnect) | Lowest |
-| Bidirectional (approval round-trip) | Needs a separate channel | Native | Native (next poll) |
-| RN support maturity | Needs a polyfill | Mature libraries | Trivial |
-| Background / flaky network | Reconnect + replay needed | Reconnect + replay needed | Degrades gracefully |
-
-The choice is pending (`Q3` in the workshop notes) and will be recorded as an ADR.
-
----
-
-## Designing for agentic failure
-
-An agentic frontend must treat model and tool failures as first-class UX, not edge cases:
-
-- **Never assume success.** A tool call can be rejected, fail a business rule, or time
-  out. The UI surfaces each state explicitly (the reference uses `Thinking` while running
-  and distinct terminal states on completion).
-- **Errors are explainable.** Backed by RFC 9457 Problem Details from the services, the
-  agent can explain *why* something failed rather than guessing.
-- **Approval is irrevocable-action gating, not a nicety.** The pause-for-approval pattern
-  is the UX contract that keeps a probabilistic model from taking deterministic,
-  consequential action.
+| `AgentProgressPill` | Screens 5–8 | `CrewAI` `copilotkit_emit_state` (`canvas_logs`) | Live status banner (*"Checking R3,200 float buffer..."*, *"Verifying SARB rate via Tavily..."*) |
+| `RecipientResolutionCard` | Screen 5 | `resolveRecipient` | Displays matched contact (`@capitec.shap`), PayShap (`R0`) vs legacy RTC (`R50` saved) literacy badge, and funding account selector |
+| `TransferSynthesisCard` | Screen 6 | `stagePayment` | Interactive amount presets, safe-float preservation note, rail comparison, and monthly budget envelope bar |
+| `BiometricClearanceGate` | Screen 7 | HITL Interrupt (`PENDING_APPROVAL`) | Pauses agent flow; invokes Android `BiometricPrompt`; includes optional bounded recurring schedule toggle (`<= R2,000/mo`) |
+| `PayShapSettlementReceipt` | Screen 8 | Post-confirmation resume | Displays settled PASA reference, new balance, envelope status, 1-tap WhatsApp `Share` sheet, and monthly automation toggle |
+| `WealthLiteracyCard` | Copilot / Vaults | `simulateWealthGrowth` | Interactive compound yield vs SA inflation comparison with grounded source citations and FAIS educational notice |
 
 ---
 
-## Reference implementation map
+## 4. Designing for Agentic Failure on Mobile
 
-| Concern | File |
-|---|---|
-| Readable context + actions + approval | [`frontend/web/src/components/copilot/CopilotActions.tsx`](../../frontend/web/src/components/copilot/CopilotActions.tsx) |
-| Generative UI components | [`frontend/web/src/components/copilot/GenUI.tsx`](../../frontend/web/src/components/copilot/GenUI.tsx) |
-| Design-system primitives | [`frontend/web/src/components/ui/`](../../frontend/web/src/components/ui/) |
-| Design tokens / theming | [`frontend/web/src/app/globals.css`](../../frontend/web/src/app/globals.css) |
-| State store | [`frontend/web/src/lib/store.tsx`](../../frontend/web/src/lib/store.tsx) |
-| Offline agent fallback | [`frontend/web/src/lib/demo-adapter.ts`](../../frontend/web/src/lib/demo-adapter.ts) |
-| Mobile channel | [`frontend/mobile/`](../../frontend/README.md) |
-| Mobile design decisions | [`agentic-app-workshop-notes.md`](agentic-app-workshop-notes.md) |
-
----
-
-## Open decisions (ADRs to write)
-
-- **Streaming transport** for the RN channel (SSE / WebSocket / polling) — `Q3`.
-- **Component-catalogue contract** — schema and versioning of the native generative-UI
-  components.
-- **Which writes require approval** — only `placeOrder`, or also cart changes? (`Q11`).
-
-See the [workshop notes](agentic-app-workshop-notes.md) for the full open-question set and
-the [ADR index](../decisions/ADR-000-index.md) for where these decisions land.
+- **Never Assume Optimistic Financial Success:** Balances and receipts render only after `/v1/approvals/{id}/confirm` returns HTTP `200` with a committed ledger transaction ID.
+- **Explainable RFC 9457 Errors:** If a transfer violates safe-float rules or fails validation, the Process API returns structured Problem Details so *Jabu* explains the exact reason and suggests a safe adjustment.
+- **Offline / Drop Recovery:** Session tokens sit in `expo-secure-store`; every confirmation carries `X-Idempotency-Key` so retrying over flaky mobile data can never double-debit the user's account.

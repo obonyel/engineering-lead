@@ -1,0 +1,112 @@
+name: Sahara Mzansi Governance & CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  governance-guardrails:
+    name: Architecture & Clean-Room Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify clean-room boundaries (zero legacy/client leaks or descoped channels)
+        run: |
+          set -euo pipefail
+          echo "Checking for forbidden legacy/vendor terms..."
+          FORBIDDEN_PATTERN='(kraken|nedbank|accenture|acn-enhanced|acn-new|datapower|entersekt|nedid|temenos|rnmodule|/users/l\.obonye|huawei hms)'
+          if grep -rniE "$FORBIDDEN_PATTERN" . \
+            --exclude-dir=.git \
+            --exclude=ci.yml; then
+            echo "::error::Forbidden legacy or vendor-locked architecture reference detected."
+            exit 1
+          fi
+          echo "Checking that descoped directories remain absent..."
+          for dir in frontend microservices .claude; do
+            if [ -e "$dir" ]; then
+              echo "::error::Descoped directory '$dir' must not be reintroduced. Use 'mobile/' and 'backend/'."
+              exit 1
+            fi
+          done
+
+      - name: Verify required ADRs, architecture docs, and Stitch design specs exist
+        run: |
+          set -euo pipefail
+          REQUIRED_FILES=(
+            "README.md"
+            "mobile/README.md"
+            "backend/README.md"
+            "docs/decisions/ADR-000-index.md"
+            "docs/decisions/ADR-001-target-android-only-expo-channel.md"
+            "docs/decisions/ADR-002-adopt-copilotkit-react-native-headless-and-ag-ui.md"
+            "docs/decisions/ADR-003-orchestrate-agents-with-crewai-flows-gemini-and-tavily.md"
+            "docs/decisions/ADR-004-use-supabase-postgres-ledger-and-auth.md"
+            "docs/decisions/ADR-005-enforce-biometric-hitl-and-twenty-dollar-finops-cap.md"
+            "docs/architecture/agentic-demo-hld.md"
+            "docs/architecture/frontend-architecture.md"
+            "docs/architecture/integration-architecture.md"
+            "docs/designs/sahara-mzansi/README.md"
+            "docs/developer-implementation-guide.md"
+          )
+          for f in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing required architecture/governance file: $f"
+              exit 1
+            fi
+          done
+
+      - name: Enforce CopilotKit React Native invariants when mobile/ is scaffolded
+        run: |
+          set -euo pipefail
+          if [ -f "mobile/index.js" ]; then
+            FIRST_IMPORT=$(grep -vE '^\s*(//|/\*|\*|$)' mobile/index.js | head -n 1)
+            if [[ "$FIRST_IMPORT" != *'react-native-get-random-values'* ]]; then
+              echo "::error::mobile/index.js MUST import 'react-native-get-random-values' on the first executable line before '@copilotkit/react-native/polyfills' (ADR-002)."
+              exit 1
+            fi
+          fi
+          if [ -d "mobile/src" ]; then
+            if grep -rnE "from ['\"]@copilotkit/react-native['\"]" mobile/src; then
+              echo "::error::Import from '@copilotkit/react-native/headless' instead of root '@copilotkit/react-native' barrel to avoid Metro bundler failures (ADR-002)."
+              exit 1
+            fi
+          fi
+
+  mobile-checks:
+    name: Android Mobile Typecheck & Audit
+    runs-on: ubuntu-latest
+    if: hashFiles('mobile/package.json') != ''
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+      - run: npx tsc --noEmit
+      - run: npm audit --audit-level=high
+
+  backend-checks:
+    name: Backend Lint & Ledger Guardrail Tests
+    runs-on: ubuntu-latest
+    if: hashFiles('backend/pyproject.toml') != ''
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: pytest -v

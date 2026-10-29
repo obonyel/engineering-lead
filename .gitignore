@@ -1,8 +1,6 @@
 # ---------------------------------------------------------------------------
-# Root .gitignore — global safety net for the engineering-lead workbench.
-# Per-project ignores live in demo/, frontend/RNModule/, microservices/.
-# This file covers OS/editor cruft, secrets, and belt-and-suspenders catch-alls
-# so build output or dependencies can never leak into the portfolio repo.
+# Root .gitignore — global safety net for the Sahara Mzansi engineering repo.
+# Covers OS/editor cruft, secrets, Android/Expo build outputs, Node, and Python.
 # ---------------------------------------------------------------------------
 
 # OS cruft
@@ -14,10 +12,11 @@
 ehthumbs.db
 Thumbs.db
 
-# Editor / IDE
+# Editor / IDE / local AI session files
 .idea/
 .vscode/*
 !.vscode/extensions.json
+.claude/
 *.swp
 *.swo
 *~
@@ -27,20 +26,30 @@ Thumbs.db
 .env.*
 !.env.example
 
-# Claude Code local overrides (keep shared settings.json, ignore local)
-.claude/settings.local.json
-
-# Dependencies (catch-all; subprojects also ignore their own)
+# Node / Expo / React Native (Android)
 **/node_modules/
-**/vendor/
-
-# Build / cache output (catch-all)
-**/.next/
+**/.expo/
+**/.expo-shared/
 **/dist/
 **/build/
-**/bin/
-**/obj/
+**/android/.gradle/
+**/android/app/build/
+**/android/local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
 *.tsbuildinfo
+
+# Python (CrewAI / FastAPI backend)
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
 
 # Logs
 *.log

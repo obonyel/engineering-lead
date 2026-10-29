@@ -23,7 +23,7 @@
 - **Owns:** Team throughput and quality, code reviews, engineering standards in practice, sprint execution, estimates, developer growth, pull-request hygiene, CI health.
 - **Brings to the EL:** Realistic estimates, team capacity and morale, delivery risks early, implementation feedback on designs.
 - **EL expects:** Standards followed (branching, testing, review); blockers surfaced within a day; honest status.
-- **Align on:** Capacity vs commitment, tech debt allocation, team structure per platform (iOS, Android, Huawei, BE), onboarding.
+- **Align on:** Capacity vs commitment, tech debt allocation, team structure across Android mobile and backend services, onboarding.
 - **Distinguish from Tech Lead:** Dev Lead = *how the team delivers*; Tech Lead = *what the design is*. On small teams one person holds both; split once the team exceeds roughly 8 engineers or covers multiple platforms.
 
 ### Tech Lead
@@ -38,19 +38,19 @@
 
 ### Integration Architect
 **Purpose:** Own how systems talk to each other across Experience, Process and System layers.
-- **Owns:** API strategy and contracts (REST/async), canonical data model, integration patterns (orchestration vs choreography, saga, bridge, adapter), Kafka topics and schemas, back-pressure and idempotency policy, gateway policy (Azure API Gateway, IBM API Connect, ESB/DataPower), provider-system onboarding.
+- **Owns:** API strategy and contracts (REST/AG-UI streaming), canonical data model, integration patterns (ACID transactions, sagas, anti-corruption adapters), idempotency and rate-limiting policy, edge/gateway security, provider-system onboarding.
 - **Brings to the EL:** Dependency map, contract status of every provider system, versioning strategy, failure-mode analysis.
-- **EL expects:** Contract-first; consumer-driven contract tests; timeout/retry/circuit-breaker standards; event schema governance.
-- **Align on:** Who owns each API, compensation design for sagas, SLAs with provider teams, environment availability for test.
-- **Engage early when:** New provider system, new channel, any change to canonical model, anything crossing the on-prem/cloud boundary.
+- **EL expects:** Contract-first; consumer-driven contract tests; timeout/retry/circuit-breaker standards; schema governance.
+- **Align on:** Who owns each API, compensation design, SLAs with provider teams, environment availability for test.
+- **Engage early when:** New provider system, new agentic tool contract, any change to canonical model.
 
-### Frontend Architect
-**Purpose:** Own the client architecture across Mobile (iOS, Android, Huawei/HMS), Web and Conversational channels.
-- **Owns:** Client architecture and module boundaries, thin-client SDK strategy, design system and component library, state management, offline/resilience strategy, navigation and deep-linking, feature flags, mini-app / super-app container approach, app performance budgets, accessibility, client-side security (certificate pinning, device binding, jailbreak/root detection with Security).
-- **Brings to the EL:** Platform parity plan, release train constraints (app-store review), SDK versioning impact.
-- **EL expects:** One architecture, three platforms (no divergence without an ADR); backwards-compatible API consumption (old app versions live for months); telemetry in every feature.
-- **Align on:** Experience API shape with Integration Architect (BFF), design system with UX, release cadence with PO, HMS parity.
-- **Red flags:** Business logic leaking into the client; per-platform divergence; no force-upgrade strategy.
+### Frontend / Mobile Architect
+**Purpose:** Own the client architecture on the Android mobile channel and native generative UI contract.
+- **Owns:** Android React Native (Expo) module boundaries, `@copilotkit/react-native/headless` AG-UI client integration, design system and native Generative UI component catalogue, state management, offline/resilience strategy, navigation and deep-linking, feature flags, client-side security (`expo-secure-store`, hardware `BiometricPrompt`, device integrity with Security).
+- **Brings to the EL:** Android release train constraints (EAS / Firebase App Distribution / Play Store), bundle health, component-catalogue versioning impact.
+- **EL expects:** Zero business logic in the client; backwards-compatible API consumption; telemetry in every feature.
+- **Align on:** Experience API and AG-UI tool contracts with Integration Architect, design system with UX, release cadence with PO.
+- **Red flags:** Business logic leaking into the client; unversioned generative UI payloads; no force-upgrade strategy.
 
 ### Solution / Enterprise Architect (adjacent)
 Owns target-state architecture and cross-programme standards. The EL consults on guardrails and escalates deviations. Integration and Frontend Architects work within these guardrails.
@@ -59,9 +59,9 @@ Owns target-state architecture and cross-programme standards. The EL consults on
 
 | Role | Owns | EL aligns on |
 |------|------|--------------|
-| **Security Architect / CISO office** | Threat models, identity (Entersekt, NedID, consent, OOBV, Facetec-class biometrics), pen-test, key management | Threat model before build; security review gate |
-| **Risk and Compliance** | Regulatory obligations (POPIA, PCI-DSS, FICA, SARB/ Prudential Authority directives), operational-risk sign-off | Risk register, data residency, outsourcing/cloud notifications |
-| **Data Architect / Data Owner** | Data classification, MDM, EDP/EDW feeds, lineage, retention | PII handling, analytics events, consent |
+| **Security Architect / CISO office** | Threat models, identity (OAuth 2.0/OTP, POPIA consent, hardware biometric step-up, HITL gates), pen-test, key management | Threat model before build; security review gate |
+| **Risk and Compliance** | Regulatory obligations (POPIA, PCI-DSS, FICA, FAIS/FSCA, SARB directives), operational-risk sign-off | Risk register, data residency, regulatory boundaries |
+| **Data Architect / Data Owner** | Data classification, ledger schema, `pgvector` knowledge store, lineage, retention | PII handling, analytics events, consent |
 | **QA / Test Lead** | Test strategy, automation, performance and non-functional testing, test data | Test environments, entry/exit criteria |
 | **DevOps / Platform Engineer** | CI/CD, IaC, environments, observability stack, secrets | Landing zone, pipelines, cost, SLOs |
 | **SRE / Operations (L2/L3)** | Run, incident response, on-call, capacity | Runbooks, handover, error budgets |

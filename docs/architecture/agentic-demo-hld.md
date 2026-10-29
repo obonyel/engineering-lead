@@ -1,144 +1,97 @@
-# Agentic Banking Demo — High-Level Design
+# Sahara Mzansi — High-Level Design (`<= $20/Month` Stack)
 
-The high-level design for the reference demo: a simplified, **zero-cost** realisation of
-the four-layer banking architecture (**channel → experience → process → provider/system**),
-built to *teach the modernization pattern* rather than to be a production banking system.
+The high-level design for **Sahara Mzansi**: a lean, regulated-pattern agentic banking and wealth super app built exclusively for **Android** across four strictly separated layers (**Channel → Experience → Process → System**) under a hard **`<= $20/month`** FinOps ceiling (`~$1–$9/month` actual).
 
-Editable source: [`agentic-demo-hld.drawio`](agentic-demo-hld.drawio) (open in
-[diagrams.net](https://app.diagrams.net) or the VS Code Draw.io extension). The Mermaid
-mirror below renders directly on GitHub so teams can read it without any tool.
-
-> **Purpose.** Guide teams who are modernising their architecture and their squads. The
-> demo keeps each layer deliberately thin, but the *seams* between layers — and the rules
-> at each seam — are the real lesson.
+Editable diagrams: [`agentic-demo-hld.drawio`](agentic-demo-hld.drawio) and [`SystemContext.drawio`](SystemContext.drawio).  
+Visual UI/UX specification: [`docs/designs/sahara-mzansi/README.md`](../designs/sahara-mzansi/README.md).  
+Governing ADRs: [`ADR-001`](../decisions/ADR-001-target-android-only-expo-channel.md) through [`ADR-005`](../decisions/ADR-005-enforce-biometric-hitl-and-twenty-dollar-finops-cap.md).
 
 ---
 
-## The architecture
+## 1. End-to-End Architecture
 
 ```mermaid
 flowchart TB
-    subgraph CH["CHANNEL"]
-        MOB["Mobile app<br/>(Expo · React Native)<br/>— current focus —"]
-        WEB["Web app<br/>(Next.js · micro-frontends)"]
-        CPK["CopilotKit + AG-UI<br/>agentic + generative UI<br/>human-in-the-loop approval"]
+    subgraph CH["1. CHANNEL LAYER · Android Only"]
+        AND["Sahara Mzansi Android App<br/>(React Native · Expo · TypeScript)<br/>Onboarding · Wealth Dashboard · BiometricPrompt Gate"]
+        CPK["@copilotkit/react-native/headless (AG-UI)<br/>Line-1 CSPRNG Polyfill · Native GenUI Catalogue<br/>useRenderTool · useFrontendTool"]
     end
 
-    CF["Cloudflare — DNS · TLS · CDN (fronts Cloud Run)"]
+    CF["Cloudflare Edge — DNS · TLS 1.3 · WAF (~$1/mo domain)"]
 
-    subgraph EXP["EXPERIENCE LAYER · Google Cloud Run (Docker)"]
-        AGENT["Agent service<br/>CopilotKit runtime + AG-UI + Vercel AI SDK<br/>readable context · tools · approval gate<br/><b>no business rules</b>"]
+    subgraph EXP["2. EXPERIENCE LAYER · Google Cloud Run (Scales to Zero)"]
+        RT["CopilotKit Runtime v2 (/api/copilotkit)<br/>JWT Auth Guard · Per-User Rate Limiter · AG-UI Bridge"]
+        CREW["CrewAI Flows (Flow[SaharaAgentState] / CopilotKitState)<br/>Jabu (Treasury & Wealth) · Kagiso (Fee Sentinel) · Thabo (Utilities)<br/>copilotkit_emit_state live telemetry · <b>NO ledger writes</b>"]
     end
 
-    GEM["Gemini<br/>Google AI Studio API<br/>(free tier)"]
+    GEM["Google Gemini 3.8 Flash (gemini-3.8-flash)<br/>($0 Free Tier -> $2-$8/mo Paid, $10 hard cap)"]
+    TAV["Tavily Search API (Free Tier)<br/>Domain-Restricted SA Financial Literacy<br/>(resbank · fsca · sars · gov.za)"]
 
-    subgraph PROC["PROCESS LAYER · Google Cloud Run (Docker)"]
-        BIZ["Business services<br/>cart · checkout (saga) · order<br/>validation · idempotency keys · audit log"]
+    subgraph PROC["3. PROCESS LAYER · FastAPI (/v1/*)"]
+        BIZ["Banking Domain Services<br/>FICA 13-Digit ID Validator · Safe-Float & Envelope Guardrails<br/>Two-Phase HITL Approval Gate · Bounded Payment Scheduler<br/>X-Idempotency-Key · Atomic Double-Entry Ledger Service"]
     end
 
-    subgraph PROV["PROVIDER / SYSTEM LAYER"]
-        MOCK["Mock provider services<br/>catalogue · payment-mock<br/>(CDM-lite adapters)"]
-        SUPA["Supabase<br/>Postgres · Auth · RLS<br/>(system of record)"]
+    subgraph SYS["4. SYSTEM LAYER · Supabase Free Tier + CDM-Lite Adapters"]
+        MOCK["Simulated SA Rail Adapters (CDM-Lite)<br/>PayShapSimAdapter · FicaSimAdapter · UtilitySimAdapter"]
+        SUPA["Supabase (Postgres · Auth · RLS · pgvector · pg_cron)<br/>BIGINT Cent Ledger · Append-Only audit_events<br/>Literacy Knowledge Vectors"]
     end
 
-    MOB --> CF
-    WEB --> CF
-    CF -->|HTTPS| AGENT
-    AGENT -->|LLM · tool-calling| GEM
-    AGENT -->|validated tool calls| BIZ
-    BIZ -->|CDM| MOCK
-    BIZ -->|persist · idempotency · audit| SUPA
-    MOB -.->|Auth session · RLS| SUPA
+    AND <--> CPK
+    AND --> CF
+    CF -->|"HTTPS (AG-UI Stream)"| RT
+    CF -->|"HTTPS REST (/v1/*)"| BIZ
+    RT <-->|"CopilotKitRemoteEndpoint"| CREW
+    CREW <-->|"Tool-Calling & Synthesis"| GEM
+    CREW <-->|"Grounded Rate & Rule Lookup"| TAV
+    CREW -->|"Stage Proposals & Read Context"| BIZ
+    BIZ -->|"CDM-Lite Ports"| MOCK
+    BIZ -->|"ACID Tx · Idempotency · Audit"| SUPA
+    AND -.->|"OTP / OAuth Session"| SUPA
 ```
 
 ---
 
-## Layers and capabilities
+## 2. Layers and Capabilities
 
-### Channel
-- **Mobile (React Native via Expo)** — the current focus. Expo gives free cloud builds
-  (EAS) and OTA updates, and removes the local full-Xcode requirement. Distribution:
-  **Android via Firebase App Distribution** (free); **iOS via Expo Go** ($0 for the demo).
-  Putting the app on real iPhones later needs an Apple Developer account ($99/yr) — at which
-  point Firebase App Distribution serves iOS too.
-- **Web (Next.js, micro-frontends)** — a shell composing independently deliverable feature
-  frontends, so squads ship slices without a monolith release.
-- Both channels use **CopilotKit + AG-UI** for the agentic chat and **generative UI**, and
-  both enforce **human-in-the-loop approval** before any consequential action.
+### Channel Layer (`mobile/` — Android Only)
+- **Focused Target ([ADR-001](../decisions/ADR-001-target-android-only-expo-channel.md)):** Android smartphones and emulators built with **React Native + Expo**. Web, iOS (`$99/yr`), and secondary mobile app stores are descoped so 100% of effort goes into a crisp native mobile banking UX at `$0` distribution cost (**Firebase App Distribution** + **EAS Free Tier**).
+- **Native Agentic Client ([ADR-002](../decisions/ADR-002-adopt-copilotkit-react-native-headless-and-ag-ui.md)):** Uses `@copilotkit/react-native/headless` over **AG-UI**, importing `react-native-get-random-values` on **line 1** of `index.js` before `@copilotkit/react-native/polyfills` so Hermes uses Android's hardware-backed CSPRNG rather than `Math.random`.
+- **Native Generative UI & Biometrics:** Renders bespoke **Sahara Mzansi** components (`View`, `Text`, `Pressable`) via `useRenderTool` and gates consequential actions behind Android's `BiometricPrompt` (`expo-local-authentication`).
 
-### Experience layer — *channel adaptation only, no business rules*
-- The **agent service** hosts the CopilotKit runtime, speaks **AG-UI** to the channels, and
-  runs the agent loop on the **Vercel AI SDK** with **Gemini**.
-- It exposes *readable context* (live app state) and *tools* to the model, and gates
-  consequential tools behind approval. It **proposes and presents; it never decides money**.
-- Runs as a Docker container on **Google Cloud Run** (scales to zero; free at demo scale).
+### Experience Layer (`backend/copilot-runtime/` & `backend/app/agents/`)
+- **Self-Hosted Runtime:** `@copilotkit/runtime/v2` verifies the caller's Supabase JWT, enforces per-user daily turn quotas, and bridges AG-UI streams to FastAPI `/copilotkit` (`CopilotKitRemoteEndpoint`).
+- **Stateful Multi-Agent Orchestration ([ADR-003](../decisions/ADR-003-orchestrate-agents-with-crewai-flows-gemini-and-tavily.md)):** CrewAI `Flow[SaharaAgentState]` (extending `CopilotKitState`) coordinates:
+  - **Jabu:** Recipient & ShapID lookup, PayShap (`R0`) vs EFT RTC fee comparison, safe daily float calculation, high-yield Notice Stash sweeps, and compound-vs-inflation wealth simulations.
+  - **Kagiso:** Recurring DebiCheck / subscription fee audits and staged debit-order blocks.
+  - **Thabo:** Prepaid electricity/airtime tracking and monthly category budget quotas.
+- **Live Telemetry & Grounded Literacy:** Streams step-by-step status pills (`copilotkit_emit_state`) to the phone while grounding SA financial literacy answers in **Supabase `pgvector`** and domain-restricted **Tavily Search** (`resbank.co.za`, `fsca.co.za`, `sars.gov.za`, `gov.za`).
 
-### Process layer — *business logic lives here*
-- **Business services** own cart, checkout (as a small **saga** with declared
-  compensation), and order. They perform validation, enforce **idempotency keys** on every
-  write, and emit an **audit log** entry per state change.
-- This is where teams see the modernization discipline: the agent cannot write directly;
-  every mutation is a validated, idempotent, audited call into this layer.
+### Process Layer (`backend/app/process/`)
+- **Owns All Business Rules:** FICA onboarding validation (13-digit SA ID Luhn & DOB decoding), `@sahara.shap` proxy registration, virtual card freeze/unfreeze, safe-float checks, bounded recurring payment rules, `X-Idempotency-Key` deduplication, and RFC 9457 Problem Details errors.
+- **Two-Phase HITL Gate ([ADR-005](../decisions/ADR-005-enforce-biometric-hitl-and-twenty-dollar-finops-cap.md)):** CrewAI tools can only create `PENDING_APPROVAL` rows (`/v1/approvals/stage`). Money moves **only** when the user passes Android `BiometricPrompt` and calls `/v1/approvals/{id}/confirm`.
 
-### Provider / System layer — *systems of record behind thin adapters*
-- **Mock provider services** (catalogue, payment-mock) stand in for bounded-context
-  providers, each behind a **CDM-lite adapter** so the canonical model is visible even in
-  the demo.
-- **Supabase** (Postgres + Auth + Row-Level Security) is the system of record. Supabase
-  Auth provides real identity; RLS is the data-access guard. The service-role key stays
-  backend-only; the app uses the anon key plus the user's session.
-
-### Edge & cross-cutting
-- **Cloudflare** provides DNS, TLS, and CDN on a custom domain in front of Cloud Run (the
-  one planned spend is the domain).
-- **Audit trail** is emitted at every state change in the Process layer — the demo-scale
-  stand-in for the regulatory audit requirement.
+### System Layer (`backend/app/system/` & `Supabase`)
+- **Supabase ([ADR-004](../decisions/ADR-004-use-supabase-postgres-ledger-and-auth.md)):** Managed Postgres storing balances and double-entry `ledger_entries` in **integer cents (`BIGINT`)**, Row-Level Security, append-only `audit_events` (`UPDATE`/`DELETE` revoked), `pgvector` embeddings, and `pg_cron` triggers.
+- **CDM-Lite Adapters:** Simulated PayShap, FICA, and prepaid utility adapters isolated behind canonical Python interfaces.
 
 ---
 
-## The zero-cost stack at a glance
+## 3. FinOps Budget Summary (`<= $20/Month` Hard Ceiling)
 
-| Concern | Choice | Cost |
+| Concern | Choice | Monthly Cost |
 |---|---|---|
-| LLM | Gemini (Google AI Studio API, free tier) | Free |
-| Agent runtime | Vercel AI SDK + CopilotKit / AG-UI | Free (OSS) |
-| Backend hosting | Google Cloud Run (Docker, scales to zero) | Free at demo scale |
-| Database / Auth | Supabase free tier (Postgres · Auth · RLS) | Free |
-| Edge / domain | Cloudflare (free plan) + custom domain | ~domain only |
-| Mobile build | Expo + EAS Build (no local Xcode needed) | Free |
-| Mobile dist | Android via Firebase App Distribution; iOS via Expo Go | Free* |
-
-\* iOS distribution to real devices (via Firebase App Distribution or TestFlight) needs an
-Apple Developer account ($99/yr) — deferred for the demo by using Expo Go. Every other path
-here is free.
+| Mobile build & distribution | Expo + EAS Free Tier + Firebase App Distribution (Android APK) | `$0.00` |
+| Backend compute | Google Cloud Run (Docker, scales to zero, free tier) | `$0.00` |
+| LLM reasoning | Google Gemini 3.8 Flash (`gemini-3.8-flash`, `$10/mo` hard billing cap) | `$0.00 – $8.00` |
+| Financial literacy search | Tavily API Researcher Free Tier (`1,000` credits/mo + 24h `pgvector` cache) | `$0.00` |
+| Database / Auth / Vector | Supabase Free Tier (Postgres · Auth · RLS · `pgvector` · `pg_cron`) | `$0.00` |
+| Edge DNS / TLS / WAF | Cloudflare Free Plan + custom domain | `~$1.00` |
+| **Total Monthly Spend** | — | **`~$1.00 – $9.00 / mo`** |
 
 ---
 
-## What this demo deliberately simplifies
+## 4. Deliberate Demo Simplifications
 
-Honest scope, so adopters know where the edges are:
-
-- **One agent, mock providers.** No real core banking, no real payments, no Kafka/ESB.
-- **CDM-lite.** The canonical model is illustrated, not fully governed by a schema registry.
-- **Saga, lightly.** Checkout shows the orchestration + compensation shape without a
-  distributed-transaction engine.
-- **Security posture is demonstrated, not hardened.** OAuth/PKCE and mTLS are design intent
-  (see the [integration pillar](integration-architecture.md)); the demo stubs where a real
-  system would enforce.
-
-For the full-scale target these simplifications map onto, see the
-[integration architecture pillar](integration-architecture.md) and the encoded
-[senior-engineering-lead agent](../../.github/agents/senior-engineering-lead.agent.md).
-
----
-
-## Open decisions
-
-Tracked as `Q1`–`Q11` in the [workshop notes](agentic-app-workshop-notes.md); the ones that
-most affect this HLD:
-
-- Streaming transport between the agent service and the RN app (AG-UI over SSE / WebSocket).
-- The versioned **native component-catalogue contract** for mobile generative UI.
-- Which writes require explicit approval (order only, or cart changes too).
-
-These will be recorded as ADRs in [`docs/decisions/`](../decisions/ADR-000-index.md).
+- **Simulated Banking Rails:** All accounts, virtual cards (`last4` tokens only), FICA checks, and PayShap settlements are simulated against a real double-entry Postgres ledger — zero real customer funds or raw card PANs are processed.
+- **Single-Database ACID over Kafka:** Because all ledger tables live in one Supabase Postgres instance, transfers execute in atomic SQL transactions rather than distributed Kafka sagas.
+- **Educational Literacy Framing (FAIS):** Wealth projections and fee coaching are explicitly framed as educational financial literacy simulations rather than licensed investment advice.

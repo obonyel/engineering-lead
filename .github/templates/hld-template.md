@@ -1,15 +1,14 @@
-# High-Level Design: [System / Product / Programme Name]
+# High-Level Design: [System / Feature Name]
 
 **Version:** 1.0
 **Author(s):** [Names]
 **Status:** `Draft` | `In Review` | `Approved`
 **Date:** YYYY-MM-DD
-**Programme/Epic:** [link]
 **Related ADRs:** [ADR-NNN links]
 **Related TDDs:** [TDD links]
 
-**Audience:** Product owners, programme managers, solution architects, senior stakeholders
-**Classification:** Internal
+**Audience:** Product owners, solution architects, engineering leads, stakeholders
+**FinOps Ceiling:** `<= $20 / month`
 
 ---
 
@@ -20,143 +19,79 @@
 - [System/capability 2]
 
 **Out of scope:**
-- [Explicitly excluded — prevents misaligned expectations]
+- [Explicitly excluded — e.g., Web channel, iOS builds, real licensed banking rails]
 
 **Business objectives:**
-- [Objective tied to a measurable outcome]
-- [Regulatory or risk objective]
+- [Objective tied to a measurable user or financial literacy outcome]
+- [Guardrail / compliance objective]
 
 ## 2. Architecture Principles Applied
 
 | Principle | Application to This System |
 |---|---|
-| API-first | All capabilities exposed as versioned OpenAPI 3.1 contracts before implementation |
-| Event-driven for auditability | All state changes emit immutable Kafka events |
-| Zero-trust security | No implicit trust between services; mTLS + OAuth 2.0 on every hop |
-| CDM everywhere | All inter-service data uses Canonical Data Model types |
-| Experience/Process/System separation | [How this system respects layer boundaries] |
-| Fail-safe defaults | Circuit breakers default to safe state (not fail-open) |
+| Strict 4-tier separation | Channel (Android) → Experience (AG-UI + CrewAI) → Process (FastAPI) → System (Supabase + Adapters) |
+| Two-phase HITL safety | Agents stage proposals (`PENDING_APPROVAL`); human biometric approval executes writes |
+| Integer-cent accounting | All monetary values stored and computed as `BIGINT` cents |
+| Grounded intelligence | Financial literacy and rates backed by `pgvector` + domain-restricted Tavily search |
+| Idempotent & audited | Every mutation requires `X-Idempotency-Key` and appends to `audit_events` |
+| Hard FinOps cap | Scales to zero within free/near-free tiers (`<= $20/month` total) |
 
 ## 3. System Context (C4 Level 1)
 
 ```mermaid
-C4Context
-    title System Context: [System Name]
-    
-    Person(customer, "Bank Customer", "Uses mobile/web app")
-    Person(staff, "Bank Staff", "Internal operations")
-    
-    System(thisSystem, "[System Name]", "[One-line description]")
-    
-    System_Ext(ncpBE, "NCP BE", "Channel BFF and real-time events")
-    System_Ext(kraken, "Interop/Kraken", "API orchestration layer")
-    System_Ext(corebanking, "Core Banking", "System of record")
-    System_Ext(security, "Security Stack", "ENTERSEKT/NedID/AZP")
-    
-    Rel(customer, thisSystem, "Uses", "HTTPS/TLS 1.3")
-    Rel(thisSystem, kraken, "Calls", "REST/mTLS")
-    Rel(thisSystem, corebanking, "Reads/Writes", "CDM/Bridge")
-    Rel(thisSystem, security, "Authenticated by", "OAuth 2.0")
+flowchart LR
+    Customer(["Customer (Android Phone)"])
+    App["Sahara Mzansi Android App<br/>(Expo · @copilotkit/react-native/headless)"]
+    Edge["Cloudflare Edge<br/>(DNS · TLS 1.3 · WAF)"]
+    Backend["Sahara Mzansi Backend<br/>(CopilotRuntime v2 + FastAPI + CrewAI Flows)"]
+    Gemini["Google Gemini 2.5 Flash<br/>(LLM Reasoning & Tool Calling)"]
+    Tavily["Tavily Search API<br/>(Grounded SA Financial Literacy)"]
+    Supabase[("Supabase<br/>(Postgres Ledger · Auth · RLS · pgvector)")]
+
+    Customer --> App --> Edge --> Backend
+    Backend --> Gemini
+    Backend --> Tavily
+    Backend --> Supabase
+    App -.->|"Auth OTP / OAuth"| Supabase
 ```
 
 ## 4. Container Architecture (C4 Level 2)
 
-```mermaid
-C4Container
-    title Container Diagram: [System Name]
-    
-    Container(mobile, "Mobile App", "Flutter/iOS/Android/HMS", "User interface")
-    Container(bff, "NCP BE / BFF", ".NET/Java", "Channel aggregation")
-    Container(expapi, "Experience API", "Kraken", "Journey orchestration")
-    Container(processapi, "Process API", "Kraken", "Business logic + sagas")
-    Container(provider, "[Provider System]", "Microservice", "Domain capability")
-    ContainerDb(db, "[Database]", "PostgreSQL/Redis", "State store")
-    Container(kafka, "Kafka", "Event bus", "Async events + audit trail")
-```
+| Container | Technology | Layer | Responsibility |
+|---|---|---|---|
+| Android App | React Native (Expo, TypeScript) | Channel | Onboarding, Dashboard, Copilot UI, Native GenUI Catalogue, `BiometricPrompt` gate |
+| Copilot Runtime | Node 22 (`@copilotkit/runtime`) | Experience | Terminates AG-UI stream, verifies JWT, rate-limits, bridges to CrewAI |
+| Agent & Process API | Python 3.12 (`FastAPI` + `CrewAI`) | Experience + Process | Runs `Flow[CopilotKitState]` (*Jabu*, *Kagiso*, *Thabo*) + `/v1/*` domain & ledger endpoints |
+| System of Record | Supabase (`Postgres 15+` + `Auth`) | System | Double-entry ledger, RLS, `pgvector` literacy store, append-only `audit_events` |
 
-## 5. Integration Landscape
-
-| Integration | Direction | Protocol | Pattern | Layer |
-|---|---|---|---|---|
-| [System A] | Inbound | REST / OAuth 2.0 | Sync request-response | Experience |
-| [System B] | Outbound | Kafka | Async choreography | Process |
-| [System C] | Outbound | SOAP/XML via Bridge | Sync + retry | System |
-
-## 6. Data Flow Overview
-
-```
-[Source] → [Processing step] → [Destination]
-
-1. Customer submits request via Mobile → NCP SDK → NCP BE
-2. NCP BE aggregates from Experience API → Redis Cache + Process API
-3. Process API executes saga → Provider System (CDM) → Core Banking (Bridge)
-4. Events emitted to Kafka → EDP (audit, analytics, NBA)
-5. AJO receives event → delivers personalised response via Notification Center
-```
-
-**Data classification:**
-| Data Type | Classification | Handling Requirement |
-|---|---|---|
-| [Account balance] | Confidential | Encrypted at rest; no logging |
-| [Customer PII] | Restricted | PoPIA consent required; ZA residency |
-| [Transaction reference] | Internal | Standard encryption |
-
-## 7. Security Architecture
+## 5. Security & Agentic Guardrails
 
 | Control | Mechanism |
 |---|---|
-| Channel authentication | OAuth 2.0 / PKCE via NedID |
-| Service-to-service | mTLS with rotate-able certificates |
-| Data in transit | TLS 1.3 minimum |
-| Data at rest | AES-256; HSM-managed keys |
-| High-risk transactions | ENTERSEKT OOBV step-up |
-| Audit trail | Immutable Kafka events → ELK/GRFS |
-| PCI scope | [Describe card data boundary and controls] |
+| Channel authentication | Supabase Auth (OAuth 2.0 / OTP) stored in Android Keystore (`expo-secure-store`) |
+| Data in transit / at rest | TLS 1.3 minimum in transit; AES-256 at rest |
+| Consequential actions | Two-phase HITL gate + Android `BiometricPrompt` verification |
+| Audit trail | Append-only `audit_events` table (`UPDATE`/`DELETE` revoked) |
+| PCI scope | Out of scope — virtual cards store tokenized `last4` display metadata only |
 
-## 8. NFR Summary
+## 6. FinOps Budget Breakdown (`<= $20/Month`)
 
-| Attribute | Requirement |
-|---|---|
-| Availability | 99.95% (< 4.4h downtime/year) |
-| Latency | p99 < [X]ms end-to-end |
-| Throughput | [X] TPS sustained / [Y] TPS peak |
-| RTO | [X] hours |
-| RPO | [X] hours |
-| Scale | Horizontal; [N] instances under peak |
-
-## 9. Technology Stack
-
-| Component | Technology | Rationale |
+| Component | Tier | Estimated Monthly Cost |
 |---|---|---|
-| Mobile | Flutter (iOS/Android/HMS) | Tri-platform, hardware biometrics |
-| API Gateway | Azure API Gateway / Kraken | [Rationale per ADR-NNN] |
-| Event streaming | Apache Kafka | Durable, replayable, CDM-enforced |
-| Database | [PostgreSQL / Redis / etc.] | [Rationale] |
-| Observability | OpenTelemetry + [APM tool] | Standard RED metrics |
+| Mobile Build & Distribution | Expo EAS Free + Firebase App Distribution | `$0.00` |
+| Backend Compute | Google Cloud Run (scale-to-zero free tier) | `$0.00` |
+| Database & Auth | Supabase Free Tier | `$0.00` |
+| LLM & Search | Gemini 2.5 Flash (`$10` cap) + Tavily Free Tier | `$0.00 – $8.00` |
+| Edge & Domain | Cloudflare Free + Custom Domain | `~$1.00` |
 
-## 10. Key Architecture Decisions
+## 7. Key Architecture Decisions
 
 | ADR | Decision | Status |
 |---|---|---|
 | ADR-NNN | [Short description] | Accepted |
 
-## 11. Risks and Constraints
+## 8. Risks and Mitigations
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | [Risk description] | High/Med/Low | High/Med/Low | [Mitigation strategy] |
-
-## 12. Target State vs Current State
-
-| Dimension | Current State | Target State | Gap |
-|---|---|---|---|
-| Architecture | [Current] | [Target] | [What must change] |
-| Technology | [Current] | [Target] | [Migration needed] |
-| Capability | [Current] | [Target] | [Features to build] |
-
-## 13. Transition Phases
-
-| Phase | Scope | Duration | Exit Criteria |
-|---|---|---|---|
-| Phase 1 | [MVP scope] | [Sprints/months] | [Measurable exit criterion] |
-| Phase 2 | [Full scope] | [Duration] | [Criterion] |

@@ -1,0 +1,35 @@
+services:
+  fastapi-process:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - DEMO_MODE=${DEMO_MODE:-true}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  copilot-runtime:
+    build:
+      context: ./copilot-runtime
+      dockerfile: Dockerfile
+    ports:
+      - "8200:8200"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - COPILOT_RUNTIME_PORT=8200
+      - FASTAPI_AGENT_URL=http://fastapi-process:8000/copilotkit
+      - DEMO_MODE=${DEMO_MODE:-true}
+    depends_on:
+      fastapi-process:
+        condition: service_healthy

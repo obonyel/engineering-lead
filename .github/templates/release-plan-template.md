@@ -16,7 +16,7 @@ What is being released, to whom, and why now.
 | Item | Detail |
 |---|---|
 | Feature/scope | [Brief description] |
-| Channels affected | Mobile (iOS / Android / Huawei) · Web · Conversational |
+| Channels affected | Android Mobile App (`Expo` / Firebase App Distribution / Play Store) |
 | Users affected | [All users / Segment / Region] |
 | Rollout model | Feature-flagged canary · Direct deploy · Blue/green |
 | Rollback window | [N hours/days after each phase before committing] |
@@ -35,11 +35,11 @@ What is being released, to whom, and why now.
 - [ ] Canary configuration validated in staging
 - [ ] Rollback procedure tested in staging
 
-### Mobile (if applicable)
-- [ ] App Store / Play Store / AppGallery submission approved (if binary change)
-- [ ] HMS compatibility verified on Huawei test device
-- [ ] Certificate pinning: new backup pin deployed ahead of cert rotation
-- [ ] SDK version compliance: within 2 minor versions of latest
+### Mobile (Android)
+- [ ] EAS Android build green; APK/AAB verified on Android Emulator & physical Android device
+- [ ] Firebase App Distribution release notes and tester group ready
+- [ ] Mandatory Hermes polyfill order (`react-native-get-random-values` first) verified in bundle
+- [ ] `@copilotkit/react-native/headless` bundle check clean (no unresolved native dependencies)
 
 ### Data and Compliance
 - [ ] Database migrations tested with rollback script

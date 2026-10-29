@@ -1,63 +1,56 @@
 ---
-applyTo: "**/*.md,**/*.yaml,**/*.yml,**/*.json"
+applyTo: "**/*.md,**/*.yaml,**/*.yml,**/*.json,**/*.ts,**/*.tsx,**/*.py,**/*.sql"
 ---
 
-# Architecture Standards
+# Architecture Standards — Sahara Mzansi
 
-## Layer Discipline
+## 1. Layer Discipline
 
-Code and configuration must respect the three-layer separation:
+Code and configuration must respect strict separation across Channel, Experience, Process, and System boundaries:
 
-**Experience Layer** — NCP BE, Kraken Experience APIs, MARTECH, Agentic:
-- Contains: channel-specific aggregation, BFF response shaping, protocol translation (REST/GraphQL to downstream), UI permission rules, real-time event routing
-- Must NOT contain: business rules, financial calculations, product eligibility logic, saga state
+- **Channel (`mobile/` — Android Expo / React Native):**
+  - **Contains:** Native screens, `@copilotkit/react-native/headless` provider and hooks (`useRenderTool`, `useFrontendTool`), versioned native Generative UI components, Android `BiometricPrompt` step-up UI, and session token storage (`expo-secure-store`).
+  - **Must NOT contain:** LLM API keys, Supabase `service_role` keys, ledger math, or direct database writes.
 
-**Process Layer** — Kraken Process APIs, Bridge, Kafka:
-- Contains: business logic, sagas, CDM-normalized data models, domain handlers, workflow state, back pressure controls
-- Must NOT contain: channel-specific formatting, mobile/web-specific payload shapes, SignalR connection management
+- **Experience Layer (`backend/copilot-runtime/` & `backend/app/agents/`):**
+  - **Contains:** Self-hosted `@copilotkit/runtime/v2` AG-UI endpoint (`/api/copilotkit`), CrewAI `Flow[SaharaAgentState]` (`CopilotKitState`) orchestrating *Jabu*, *Kagiso*, and *Thabo*, `copilotkit_emit_state` progress telemetry, and Tavily grounded financial literacy retrieval.
+  - **Must NOT contain:** Direct ledger mutations, floating-point fee/balance math, or bypasses around the Process layer's HITL approval gate.
 
-**System Layer** — Provider microservices, Core Banking, Security stack:
-- Contains: CDM adapters, system-of-record integration, security enforcement (AZP, EFP, ENTERSEKT)
-- Must NOT contain: orchestration logic, channel concerns, cross-provider data joins
+- **Process Layer (`backend/app/process/`):**
+  - **Contains:** FastAPI `/v1/*` domain services (onboarding, accounts, vaults, staged approvals, payment execution, recurring automation rules), 6-step authorization chain enforcement, `X-Idempotency-Key` deduplication, safe-float checks, and atomic Postgres transactions.
+  - **Must NOT contain:** React Native UI layout details or raw provider-specific wire formats.
 
-## Canonical Data Model Compliance
+- **System Layer (`backend/app/system/` & `Supabase`):**
+  - **Contains:** Supabase Postgres (`BIGINT` cent double-entry ledger, RLS policies, append-only `audit_events`, `pgvector`, `pg_cron`), Supabase Auth, and thin Canonical Data Model (CDM-lite) adapters (`PayShapSimAdapter`, `FicaValidatorAdapter`, `UtilitySimAdapter`).
+  - **Must NOT contain:** Multi-step workflow orchestration or channel presentation logic.
 
-All data crossing service boundaries must use CDM types. When writing OpenAPI specs or Avro schemas:
-- Reference shared CDM types from the schema registry
-- Never expose internal system schemas (Temenos T24 field names, COBOL copybook structures) outside the System layer adapter
-- CDM schema changes require: backward compatibility validation + Schema Registry PR + 2-sprint notice to consumers
+## 2. Canonical Data Model (CDM-Lite)
 
-## API Design Standards
+All data crossing Process $\leftrightarrow$ System adapters uses clean Pydantic / Zod canonical models:
+- Monetary fields use `{ amount_cents: int, currency: "ZAR" | "USD" | "EUR" | "GBP" }`.
+- External or simulated banking rails (PayShap, EFT RTC, FICA, prepaid utilities) sit behind single-responsibility adapter interfaces so live partner APIs can replace simulated adapters later without changing Process or Experience code.
 
-- Version all APIs at the URL path level: `/v1/`, `/v2/`
-- OpenAPI 3.1 spec must exist before implementation begins — spec-first development
-- All external APIs (IBM API Connect / Open Banking) require OAuth 2.0 with PKCE
-- All service-to-service calls require mTLS
-- Idempotency keys (`X-Idempotency-Key: uuid`) required on all payment and state-mutation endpoints
-- Error responses follow RFC 9457 Problem Details: `type`, `title`, `status`, `detail`, `instance`
+## 3. API & Streaming Design Standards
 
-## Saga and Event Design
+- **Agent Transport:** AG-UI over HTTP streaming (`/api/copilotkit` $\rightarrow$ FastAPI `/copilotkit`) with `CopilotKitState` delta emissions (`copilotkit_emit_state`) for real-time agent reasoning steps.
+- **REST Process APIs:** Versioned at `/v1/` with spec-first OpenAPI 3.1 contracts (`.github/templates/api-contract-template.yaml`).
+- **Authentication:** Supabase OAuth 2.0 / JWT Bearer verification on every `/api/copilotkit` and `/v1/*` request. Unauthenticated LLM or Process endpoints are forbidden.
+- **Idempotency:** `X-Idempotency-Key: <uuid-v4>` is mandatory on all `POST` / `PATCH` state-mutating endpoints.
+- **Errors:** All REST errors conform to RFC 9457 Problem Details (`type`, `title`, `status`, `detail`, `instance`, `correlationId`, `errorCode`) so both the mobile app and CrewAI agents can explain failures deterministically.
 
-- Kafka topic naming: `{domain}.{entity}.{event}` — e.g., `payments.transfer.initiated`
-- Avro schemas registered in Confluent Schema Registry before any producer is deployed
-- Every saga participant must be idempotent — check idempotency key against Redis/DB before processing
-- Compensating transactions must be declared in the saga design before implementation begins
-- Dead-letter topics: `{original-topic}.dlq` with mandatory alerting
+## 4. Transactional Integrity & Failure Compensation
 
-## ADR Requirements
+- **Single-Database ACID First:** Because the entire ledger lives in Supabase Postgres, multi-step financial mutations (debit main account $\rightarrow$ credit vault/recipient $\rightarrow$ update budget envelope $\rightarrow$ mark approval `EXECUTED` $\rightarrow$ insert `audit_events`) execute inside a **single atomic Postgres transaction** (`SELECT ... FOR UPDATE`), avoiding distributed Kafka/saga complexity.
+- **Explicit Compensation:** Any multi-step flow crossing an external adapter declares its compensating action up front before implementation.
 
-An Architecture Decision Record (ADR) in `docs/decisions/` is required before implementing:
-- Any new external dependency or third-party service
-- Any technology choice that creates lock-in (cloud provider, message broker, database)
-- Any deviation from these architecture standards
-- Any decision affecting PCI scope, PoPIA compliance, or FSCA licensing
+## 5. FinOps & ADR Governance
 
-Use the template at `.github/templates/adr-template.md`.
+An Architecture Decision Record (ADR) in `docs/decisions/` (using `.github/templates/adr-template.md`) is required before:
+- Introducing any external library, API, or cloud resource.
+- Changing any rule that affects the **`<= $20/month` total operating budget**.
+- Modifying the HITL approval gate, POPIA consent flow, or ledger schema.
 
-## Observability Standards
+## 6. Observability Standards
 
-- Structured JSON logging with fields: `timestamp`, `level`, `service`, `correlationId`, `traceId`, `spanId`, `message`
-- Distributed tracing (OpenTelemetry) on all inter-service calls
-- RED metrics (Rate, Errors, Duration) for every service endpoint
-- SLO dashboards required before any service goes to production
-- Alert → runbook linkage: every alert must have a runbook in `.github/templates/runbook-template.md` format
+- Structured JSON logs on all backend services containing `timestamp`, `level`, `service`, `correlationId`, `userId` (pseudonymised), `operation`, `durationMs`, and `outcome`.
+- Never log raw national IDs, OTPs, session JWTs, or card numbers.

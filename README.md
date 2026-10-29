@@ -1,24 +1,10 @@
-# The Agentic Engineering Lead
+# Sahara Mzansi — The Agentic Engineering Lead Reference
 
-**A reference standard for how the Engineering Lead function operates when AI agents,
-agentic applications, and executable governance become the default.**
+**A clean-room reference standard and Android banking super-app blueprint demonstrating how the Engineering Lead function operates when AI agents, native Generative UI, and executable governance become the default — built to run under a strict `<= $20/month` FinOps ceiling.**
 
-The Engineering Lead (EL) role is being reshaped. Architecture is moving from documents
-that drift to **rules an agent carries and applies consistently**. Governance is moving
-from wiki pages nobody reads to **executable, machine-readable assets**. And the products
-themselves are becoming **agentic** — systems where a language model reads application
-state and takes actions on a user's behalf, which in a regulated domain raises the bar on
-authorization, auditability, and human control.
+The Engineering Lead (EL) role is being reshaped. Architecture is moving from static slides that drift to **rules an agent carries and enforces at authoring time**. Governance is moving from wiki pages nobody reads to **executable instructions, ADRs, and CI checks**. And banking products themselves are becoming **agentic** — systems where specialist agents educate users on wealth, synthesize transfers, and stage bounded automations while **pausing at a hardware-backed biometric Human-in-the-Loop (HITL) gate before a single cent moves**.
 
-This repository is a working reference for an EL function built for that shift. It is not
-a template pack and not a theory deck — it is the artifacts themselves, wired together and
-self-documenting, so any team can read a corner of it, understand *why* it is shaped the
-way it is, and adopt the pattern in their own organisation.
-
-The practice is demonstrated end-to-end through a **banking super-app reference
-implementation** (three channels, an Experience/Process/System layer architecture,
-tri-platform mobile, and an agentic commerce experience). The domain is illustrative:
-swap banking for yours and the structure holds.
+This repository delivers both halves together through **Sahara Mzansi**: an **Android-only** South African agentic banking and wealth super app covering FICA registration, consolidated wealth vaults, grounded financial literacy, PayShap transfers, and biometric HITL settlement.
 
 ---
 
@@ -26,126 +12,70 @@ swap banking for yours and the structure holds.
 
 | Yesterday | In this standard |
 |---|---|
-| Architecture lives in diagrams that go stale | Architecture is **encoded in an agent** that applies the stack's rules on every design — layers, sagas, CDM, the security chain |
-| Standards are PDFs in a wiki | Standards are **executable instructions and templates** that travel with the code and shape the work as it happens |
-| Decisions are tribal knowledge | Decisions are **ADRs**, linked to the designs they constrain, with trade-offs made explicit |
-| "AI strategy" is a slide | AI is the **operating model**: the EL builds agentic products *and* leads with agentic tooling |
-| The EL reviews after the fact | Guardrails are **present at authoring time** — compliance, layer discipline, and the agentic authorization chain are enforced where work is done |
-
-The EL of the future is accountable for the same outcome — the right thing, built soundly,
-shipped safely, operable afterwards — but the leverage is different: **judgement captured
-as reusable, executable assets** rather than re-applied by hand.
+| Architecture lives in diagrams that go stale | Architecture is **encoded in specialist agents** ([`senior-engineering-lead`](.github/agents/senior-engineering-lead.agent.md), [`mobile-architect`](.github/agents/mobile-architect.agent.md)) that enforce layer boundaries, FinOps caps, and HITL security chains on every change |
+| Standards are PDFs in a wiki | Standards are **executable instructions, templates, and CI workflows** ([`.github/`](.github/)) that travel with the code |
+| Decisions are tribal knowledge | Decisions are **indexed ADRs** ([`ADR-001`–`ADR-005`](docs/decisions/ADR-000-index.md)), explicitly recording trade-offs and cost ceilings |
+| Enterprise reference stacks require `$20,000/mo` | Regulated banking discipline (`Channel → Experience → Process → System`, integer-cent double-entry ledger, idempotency, append-only audit logs) runs cleanly for **`~$1–$9/month`** |
+| Agents either only chat or unsafely mutate state | Agents stream native Generative UI over **AG-UI** and stage `PENDING_APPROVAL` intents that **require Android `BiometricPrompt` confirmation** |
 
 ---
 
-## What this standard provides
+## What this repository provides
 
-| Component | What it gives an organisation |
+| Component | What it gives you |
 |---|---|
-| **An architecture, encoded** | [`.github/agents/senior-engineering-lead.agent.md`](.github/agents/senior-engineering-lead.agent.md) — a Copilot agent carrying a full stack: channels, Experience/Process/System layers, the dual async pipeline (CloudEvents over WebSocket vs HTTP), sagas, the Canonical Data Model, and the agentic authorization chain. Plus a [mobile-architect](.github/agents/mobile-architect.agent.md) specialist. |
-| **An agentic application pattern** | [`frontend/web/`](frontend/web/README.md) — a running reference app where the agent reads state via readable context, acts only through validated tools, renders generative UI, and **pauses for human approval before anything that touches money**. |
-| **A frontend architecture pattern** | A matched design system rebuilt as primitives, agentic + generative UI composition, and a mobile channel ([`frontend/mobile/`](frontend/README.md)) with a versioned native component-catalogue contract under design. |
-| **Executable governance** | The EL [playbook](docs/playbook/README.md) (roles, alignment, lifecycle gates, checklists), 12 artifact [templates](.github/templates/), and an [ADR discipline](docs/decisions/ADR-000-index.md). |
-| **Regulated-domain guardrails** | [`.github/instructions/`](.github/instructions/) — compliance (PoPIA / PCI-DSS / NCA / FSCA) and architecture standards enforced at authoring time. |
+| **8-Screen Sahara Mzansi Product & UI Spec** | [`docs/designs/sahara-mzansi/`](docs/designs/sahara-mzansi/README.md) — end-to-end Stitch mobile screens covering Onboarding/FICA (Screens 1–3), Consolidated Wealth Dashboard (Screen 4), and Agentic Copilot + Biometric HITL Settlement (Screens 5–8). |
+| **Android-Only Native Channel (`mobile/`)** | [`mobile/README.md`](mobile/README.md) — React Native (Expo) + `@copilotkit/react-native/headless` over AG-UI, Hermes line-1 CSPRNG polyfill enforcement, versioned native GenUI component catalogue, and `expo-local-authentication` `BiometricPrompt` clearance. |
+| **Multi-Agent & Ledger Backend (`backend/`)** | [`backend/README.md`](backend/README.md) — self-hosted `@copilotkit/runtime/v2` gateway + FastAPI + **CrewAI Flows** (`CopilotKitState` streaming *Jabu*, *Kagiso*, and *Thabo*), **Gemini 2.5 Flash**, **Tavily** grounded SA financial literacy, and **Supabase Postgres** (`BIGINT` cent ledger + RLS). |
+| **Encoded Architecture & Guardrails** | [`.github/agents/`](.github/agents/) and [`.github/instructions/`](.github/instructions/) — enforcing POPIA, PCI-DSS (zero raw PANs), NCA/FAIS educational framing, integer-cent math, and strict `<= $20/mo` FinOps limits. |
+| **Executable Governance & Playbook** | [`docs/decisions/`](docs/decisions/ADR-000-index.md) (5 Accepted ADRs), [`docs/playbook/`](docs/playbook/README.md), 12 sanitized [artifact templates](.github/templates/), and automated [GitHub Actions CI](.github/workflows/ci.yml). |
 
 ---
 
-## Start here — how the system works
+## Start here — reading order
 
-Read in this order for the full picture:
-
-1. **This page** — the thesis and the map.
-2. **[The agentic reference app](frontend/web/README.md)** — the clearest way to *see* the idea. Run it (`cd frontend/web && npm install && npm run dev`) and talk to the copilot: it searches a catalogue, manages a cart, and pauses for approval before placing an order. Works with or without an LLM key.
-3. **[The architecture workshop notes](docs/architecture/agentic-app-workshop-notes.md)** — how the same experience is taken from web to a React Native mobile app: the decisions made and the open questions still being worked.
-4. **[The senior-engineering-lead agent](.github/agents/senior-engineering-lead.agent.md)** — the architecture everything sits inside: channels, the three layers, the async event model, the security chain.
-5. **[The EL playbook](docs/playbook/README.md)** — how delivery is governed: roles, alignment, gates, checklists.
-
----
-
-## Architecture & design decisions
-
-Two pillars, held as equals — each has a dedicated page:
-**[Frontend Architecture](docs/architecture/frontend-architecture.md)** ·
-**[Integration Architecture](docs/architecture/integration-architecture.md)**.
-
-**Frontend architecture** — [full pillar page](docs/architecture/frontend-architecture.md)
-- [`frontend/web/README.md`](frontend/web/README.md) — the agentic + generative UI pattern in depth: readable context, tools as the only path to data, generative components rendered in-chat, and human-in-the-loop approval that pauses the agent run.
-- Design-system work — a published token set matched and re-implemented as primitives (`frontend/web/src/components/ui/`, `frontend/web/src/app/globals.css`).
-- [`docs/architecture/agentic-app-workshop-notes.md`](docs/architecture/agentic-app-workshop-notes.md) — the hard mobile problems designed before code: the versioned native component-catalogue contract, streaming transport choice (SSE / WebSocket / polling), and server-as-source-of-truth state.
-
-**Integration architecture** — [full pillar page](docs/architecture/integration-architecture.md)
-- [`.github/agents/senior-engineering-lead.agent.md`](.github/agents/senior-engineering-lead.agent.md) — the dual async pipeline, the CloudEvents envelope and correlation/causation model, saga selection (orchestration vs choreography), the Canonical Data Model, and the anti-corruption Bridge over legacy integration.
-- [`.github/agents/mobile-architect.agent.md`](.github/agents/mobile-architect.agent.md) — tri-platform (iOS / Android / Huawei HMS) deep-dives: HMS gap mitigation, device binding, push architecture.
-
-**Shared discipline**
-- [`docs/decisions/`](docs/decisions/ADR-000-index.md) — Architecture Decision Records (indexed; numbering starts at ADR-001).
-- [`.github/templates/`](.github/templates/) — 12 reusable artifact templates (ADR, HLD, LLD, TDD, NFR, API contract, runbook, post-mortem, risk register, security review, test strategy, release plan).
-- [`docs/architecture/SystemContext.drawio`](docs/architecture/SystemContext.drawio) — the full system context diagram.
-- [`docs/architecture/agentic-demo-hld.md`](docs/architecture/agentic-demo-hld.md) — the zero-cost demo HLD (channel → experience → process → provider), with a GitHub-rendering Mermaid diagram.
+1. **[Step-by-Step Developer Implementation Guide (Phases 2 to 5)](docs/developer-implementation-guide.md)** — plain-English instructions to run Phase 2 locally and implement Phases 3, 4, and 5 end to end.
+2. **[High-Level Design (`<= $20/Month` Stack)](docs/architecture/agentic-demo-hld.md)** — the end-to-end 4-layer architecture (`Channel → Experience → Process → System`) and itemized `~$1–$9/mo` FinOps budget.
+3. **[Sahara Mzansi Stitch Screen Specification](docs/designs/sahara-mzansi/README.md)** — all 8 mobile screens mapped to registration, wealth landing dashboard, literacy coaching, and biometric HITL settlement.
+4. **[Architecture Decision Records (`ADR-001`–`ADR-005`)](docs/decisions/ADR-000-index.md)** — why Web/PWA, iOS, and enterprise brokers were descoped in favor of Android Expo, `@copilotkit/react-native/headless`, CrewAI Flows + Tavily, and Supabase.
+5. **[Frontend Architecture](docs/architecture/frontend-architecture.md) & [Integration Architecture](docs/architecture/integration-architecture.md)** — deep dives into the Hermes CSPRNG polyfill order, `/headless` Metro rule, AG-UI streaming, Two-Phase Biometric HITL gate, and CDM-Lite rail adapters.
+6. **[Senior Engineering Lead Agent](.github/agents/senior-engineering-lead.agent.md) & [EL Playbook](docs/playbook/README.md)** — how delivery, compliance, and lifecycle gates operate.
 
 ---
 
-## Delivery, risk & operability
-
-How the work is governed, not just designed.
-
-- **[EL playbook](docs/playbook/README.md)** — [roles & RACI](docs/playbook/01-roles.md), [who to align with by engagement type](docs/playbook/02-alignment-by-context.md) (greenfield / brownfield / migration / provider onboarding), [lifecycle & decision gates](docs/playbook/03-lifecycle-and-gates.md), [cloud resource design](docs/playbook/04-cloud-resource-design.md), and [kickoff / design-review / go-live / handover checklists](docs/playbook/05-checklists.md).
-- **Compliance guardrails** — [`banking-compliance.instructions.md`](.github/instructions/banking-compliance.instructions.md) and [`architecture-standards.instructions.md`](.github/instructions/architecture-standards.instructions.md).
-- **Operability templates** — runbook, post-mortem, risk register, and security-review templates in [`.github/templates/`](.github/templates/).
-
-Core principle, carried throughout: *involve the relevant stakeholders before introducing
-a new pattern, and understand the existing patterns before changing them.*
-
----
-
-## Adopting this in your organisation
-
-The standard is designed to be forked and made your own:
-
-1. **Re-point the architecture.** Replace the stack described in the `senior-engineering-lead` agent with your own layers, services, and integration fabric. The *shape* — encoded rules, enforced layer discipline, an explicit authorization chain — is the reusable part.
-2. **Keep the governance, swap the regulator.** The playbook, templates, and ADR discipline are domain-neutral. Replace the PoPIA/PCI-DSS/NCA/FSCA guardrails with the regulations you answer to.
-3. **Build your agentic product under the same rails.** Reuse the reference app's pattern: tools as the only path to data, readable context, and human approval before consequential actions.
-4. **Make decisions executable.** Record choices as ADRs linked to their designs, and let the agent apply them consistently.
-
----
-
-## Status & maturity
+## Status & roadmap
 
 Stated plainly — a standard that overstates itself earns no trust.
 
-| Component | What it is | Maturity |
+| Workstream | Location | Current Status |
 |---|---|---|
-| [`frontend/web/`](frontend/web/) | Agentic web reference app (Next.js + CopilotKit) | **Working** — runs with an LLM key or an offline demo agent |
-| [`.github/`](.github/) | Encoded architecture, instructions, templates | **Reference** — complete and usable as-is |
-| [`docs/playbook/`](docs/playbook/) | EL operating guide | **Reference** — complete and usable as-is |
-| [`frontend/mobile/`](frontend/) | React Native mobile channel | **Scaffold** — designed in docs before build |
-| [`microservices/`](microservices/) | Backend services in Docker (.NET up; Node + Go planned) | **Scaffold** — .NET `/health` live on port 5001 |
-
-Open decisions for the mobile reference are tracked as questions Q1–Q11 in the
-[workshop notes](docs/architecture/agentic-app-workshop-notes.md). On the roadmap:
-the first ADRs (a new external dependency; streaming transport; the component-catalogue
-contract), and a written-up design-system and component-catalogue specification.
+| **Clean-Room Architecture, Governance & ADRs** | [`.github/`](.github/), [`docs/decisions/`](docs/decisions/ADR-000-index.md), [`docs/architecture/`](docs/architecture/agentic-demo-hld.md) | **Complete (Phase 1)** — legacy bloat, web store, and multi-language stubs removed; 5 ADRs & CI guardrails active |
+| **8-Screen Mobile UI/UX Specification** | [`docs/designs/sahara-mzansi/`](docs/designs/sahara-mzansi/README.md) | **Complete** — Stitch screens & component mappings locked |
+| **Foundation Scaffolds & Ledger Schema** | [`mobile/`](mobile/README.md), [`backend/`](backend/README.md), [`docs/developer-implementation-guide.md`](docs/developer-implementation-guide.md) | **Complete (Phase 2)** — Supabase `BIGINT` ledger SQL, FastAPI Process + Two-Phase HITL engine, CopilotKit `:8200` gateway, and Android Expo Router + `/headless` GenUI shell scaffolded & tested |
+| **Full Screens 1–8 UI, Live CrewAI Flows & Cloud Run APK** | [`docs/developer-implementation-guide.md`](docs/developer-implementation-guide.md) | **Phases 3–5 Next** — step-by-step developer instructions ready to execute |
 
 ---
 
 ## Repository map
 
-```
+```text
 engineering-lead/
-├── README.md                     ← you are here
-├── frontend/
-│   ├── web/                      Agentic web reference app (Next.js + CopilotKit)
-│   └── mobile/                 React Native mobile channel (current focus; scaffold)
-├── microservices/                Backend reference services in Docker (.NET / Node / Go)
+├── README.md                         ← Thesis, architecture overview, and reading order
+├── mobile/                           ← Android-only Expo + @copilotkit/react-native/headless channel
+│   └── README.md                       Hermes CSPRNG rule, headless GenUI catalogue & BiometricPrompt spec
+├── backend/                          ← CopilotKit Runtime v2 + FastAPI + CrewAI Flows + Tavily + Supabase
+│   └── README.md                       Two-process runtime topology, env vars & Two-Phase HITL contract
 ├── docs/
-│   ├── architecture/             Workshop notes + system context diagram
-│   ├── decisions/                Architecture Decision Records (ADRs)
-│   └── playbook/                 Engineering Lead operating guide
+│   ├── architecture/                 ← HLD, Frontend Architecture, Integration Architecture & Draw.io diagrams
+│   ├── decisions/                    ← ADR-000 index + ADR-001 through ADR-005
+│   ├── designs/sahara-mzansi/        ← 8 Stitch mobile screens + product-to-architecture mapping
+│   └── playbook/                     ← Lean Engineering Lead operating playbook (roles, gates, FinOps, checklists)
 └── .github/
-    ├── agents/                   Encoded architecture: senior-engineering-lead, mobile-architect
-    ├── instructions/             Architecture standards + regulated-domain compliance
-    ├── templates/                12 EL artifact templates
-    └── copilot-instructions.md   Repo-wide engineering guardrails
+    ├── agents/                       ← Encoded architecture: senior-engineering-lead & mobile-architect
+    ├── instructions/                 ← Authoring-time architecture & SA banking compliance rules
+    ├── templates/                    ← 12 clean-room EL artifact templates (ADR, HLD, LLD, TDD, OpenAPI, etc.)
+    ├── workflows/ci.yml              ← Automated governance, clean-room hygiene & build checks
+    └── copilot-instructions.md       ← Repo-wide Sahara Mzansi guardrails
 ```
 
 ---
@@ -154,13 +84,8 @@ engineering-lead/
 
 Maintained by **Letlhogonolo Obonye** ([@obonyel](https://github.com/obonyel)) and **Theodore Obonye** ([@thatguycodes](https://github.com/thatguycodes)).
 
-Released under the **[Apache License 2.0](LICENSE)** — you are free to use, adapt, and
-build on this reference standard in your own organisation, including commercially,
-provided you retain the attribution and licence notices. Contributions and adaptations
-are welcome; please keep this repository credited as the origin.
+Released under the **[Apache License 2.0](LICENSE)** — you are free to use, adapt, and build on this reference standard in your own organisation, including commercially, provided you retain the attribution and licence notices. Contributions and adaptations are welcome; please keep this repository credited as the origin.
 
 ---
 
-*A reference for agentic application engineering and the Engineering Lead function in a
-regulated context. All data is mocked; no real customer data, credentials, or payments
-are present.*
+*A reference for agentic application engineering and the Engineering Lead function in a regulated context. All banking accounts, FICA checks, virtual cards, and PayShap rails are simulated; no real customer data, credentials, or payments are processed.*
