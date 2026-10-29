@@ -152,7 +152,7 @@ engineering-lead/
 
 ## Maintainer & licence
 
-Maintained by **Letlhogonolo Obonye** (`l.obonye@accenture.com`).
+Maintained by **Letlhogonolo Obonye**.
 
 Released under the **[Apache License 2.0](LICENSE)** — you are free to use, adapt, and
 build on this reference standard in your own organisation, including commercially,
