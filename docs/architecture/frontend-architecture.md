@@ -6,8 +6,8 @@
 This page defines how the frontend of an agentic application is architected under this
 standard: the composition of an in-app agent, the UI that renders its actions, the
 contract between model and app, and the cross-platform strategy. It is grounded in a
-working reference — the agentic web app in [`demo/`](../../demo/README.md) — and extended
-to the mobile channel in [`frontend/RNModule/`](../../frontend/README.md).
+working reference — the agentic web app in [`frontend/web/`](../../frontend/web/README.md) — and extended
+to the mobile channel in [`frontend/mobile/`](../../frontend/README.md).
 
 The frontend sits in the **Experience layer**. Under the
 [architecture standards](../../.github/instructions/architecture-standards.instructions.md),
@@ -43,7 +43,7 @@ write from the model or the UI.
 ## The agentic UI pattern
 
 The reference implementation
-([`demo/src/components/copilot/CopilotActions.tsx`](../../demo/src/components/copilot/CopilotActions.tsx))
+([`frontend/web/src/components/copilot/CopilotActions.tsx`](../../frontend/web/src/components/copilot/CopilotActions.tsx))
 composes three primitives from the agent runtime (CopilotKit v1 here; the pattern is
 runtime-agnostic):
 
@@ -88,9 +88,9 @@ realisation of the rule that *LLM reasoning is not an authorization mechanism*.
 
 The reference app matches a published design system (*Atomic UI*) at the token level —
 colour, typography, radii, spacing, and shadows — in
-[`demo/src/app/globals.css`](../../demo/src/app/globals.css), and re-implements the
+[`frontend/web/src/app/globals.css`](../../frontend/web/src/app/globals.css), and re-implements the
 primitives (Button, Card, Badge, Input, Select) in
-[`demo/src/components/ui/`](../../demo/src/components/ui/). Theming is token-driven
+[`frontend/web/src/components/ui/`](../../frontend/web/src/components/ui/). Theming is token-driven
 (`data-theme`), so dark/light and brand changes are a token swap, not a component rewrite.
 
 Why this matters for an *agentic* frontend: the agent's generative components and the
@@ -103,7 +103,7 @@ precondition for trustworthy generative UI, not a cosmetic afterthought.
 ## State and source of truth
 
 The reference uses a reducer persisted to `localStorage`
-([`demo/src/lib/store.tsx`](../../demo/src/lib/store.tsx)) with one agentic-specific
+([`frontend/web/src/lib/store.tsx`](../../frontend/web/src/lib/store.tsx)) with one agentic-specific
 detail: a synchronous `getSummary()` read path, because action handlers must observe the
 *latest* state, not a render-time snapshot. Stock is clamped in the reducer so neither the
 user nor the model can over-order.
@@ -119,7 +119,7 @@ tool call, cannot place two orders.
 ## Cross-platform & the mobile channel
 
 The web demo proves the pattern; the mobile channel
-([`frontend/RNModule/`](../../frontend/README.md), React Native 0.88) is where the hard
+([`frontend/mobile/`](../../frontend/README.md), React Native 0.88) is where the hard
 frontend-architecture decisions live. They are being designed before implementation in the
 [workshop notes](agentic-app-workshop-notes.md):
 
@@ -170,13 +170,13 @@ An agentic frontend must treat model and tool failures as first-class UX, not ed
 
 | Concern | File |
 |---|---|
-| Readable context + actions + approval | [`demo/src/components/copilot/CopilotActions.tsx`](../../demo/src/components/copilot/CopilotActions.tsx) |
-| Generative UI components | [`demo/src/components/copilot/GenUI.tsx`](../../demo/src/components/copilot/GenUI.tsx) |
-| Design-system primitives | [`demo/src/components/ui/`](../../demo/src/components/ui/) |
-| Design tokens / theming | [`demo/src/app/globals.css`](../../demo/src/app/globals.css) |
-| State store | [`demo/src/lib/store.tsx`](../../demo/src/lib/store.tsx) |
-| Offline agent fallback | [`demo/src/lib/demo-adapter.ts`](../../demo/src/lib/demo-adapter.ts) |
-| Mobile channel | [`frontend/RNModule/`](../../frontend/README.md) |
+| Readable context + actions + approval | [`frontend/web/src/components/copilot/CopilotActions.tsx`](../../frontend/web/src/components/copilot/CopilotActions.tsx) |
+| Generative UI components | [`frontend/web/src/components/copilot/GenUI.tsx`](../../frontend/web/src/components/copilot/GenUI.tsx) |
+| Design-system primitives | [`frontend/web/src/components/ui/`](../../frontend/web/src/components/ui/) |
+| Design tokens / theming | [`frontend/web/src/app/globals.css`](../../frontend/web/src/app/globals.css) |
+| State store | [`frontend/web/src/lib/store.tsx`](../../frontend/web/src/lib/store.tsx) |
+| Offline agent fallback | [`frontend/web/src/lib/demo-adapter.ts`](../../frontend/web/src/lib/demo-adapter.ts) |
+| Mobile channel | [`frontend/mobile/`](../../frontend/README.md) |
 | Mobile design decisions | [`agentic-app-workshop-notes.md`](agentic-app-workshop-notes.md) |
 
 ---

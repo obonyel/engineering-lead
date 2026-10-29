@@ -43,8 +43,8 @@ as reusable, executable assets** rather than re-applied by hand.
 | Component | What it gives an organisation |
 |---|---|
 | **An architecture, encoded** | [`.github/agents/senior-engineering-lead.agent.md`](.github/agents/senior-engineering-lead.agent.md) — a Copilot agent carrying a full stack: channels, Experience/Process/System layers, the dual async pipeline (CloudEvents over WebSocket vs HTTP), sagas, the Canonical Data Model, and the agentic authorization chain. Plus a [mobile-architect](.github/agents/mobile-architect.agent.md) specialist. |
-| **An agentic application pattern** | [`demo/`](demo/README.md) — a running reference app where the agent reads state via readable context, acts only through validated tools, renders generative UI, and **pauses for human approval before anything that touches money**. |
-| **A frontend architecture pattern** | A matched design system rebuilt as primitives, agentic + generative UI composition, and a mobile channel ([`frontend/RNModule/`](frontend/README.md)) with a versioned native component-catalogue contract under design. |
+| **An agentic application pattern** | [`frontend/web/`](frontend/web/README.md) — a running reference app where the agent reads state via readable context, acts only through validated tools, renders generative UI, and **pauses for human approval before anything that touches money**. |
+| **A frontend architecture pattern** | A matched design system rebuilt as primitives, agentic + generative UI composition, and a mobile channel ([`frontend/mobile/`](frontend/README.md)) with a versioned native component-catalogue contract under design. |
 | **Executable governance** | The EL [playbook](docs/playbook/README.md) (roles, alignment, lifecycle gates, checklists), 12 artifact [templates](.github/templates/), and an [ADR discipline](docs/decisions/ADR-000-index.md). |
 | **Regulated-domain guardrails** | [`.github/instructions/`](.github/instructions/) — compliance (PoPIA / PCI-DSS / NCA / FSCA) and architecture standards enforced at authoring time. |
 
@@ -55,7 +55,7 @@ as reusable, executable assets** rather than re-applied by hand.
 Read in this order for the full picture:
 
 1. **This page** — the thesis and the map.
-2. **[The agentic reference app](demo/README.md)** — the clearest way to *see* the idea. Run it (`cd demo && npm install && npm run dev`) and talk to the copilot: it searches a catalogue, manages a cart, and pauses for approval before placing an order. Works with or without an LLM key.
+2. **[The agentic reference app](frontend/web/README.md)** — the clearest way to *see* the idea. Run it (`cd frontend/web && npm install && npm run dev`) and talk to the copilot: it searches a catalogue, manages a cart, and pauses for approval before placing an order. Works with or without an LLM key.
 3. **[The architecture workshop notes](docs/architecture/agentic-app-workshop-notes.md)** — how the same experience is taken from web to a React Native mobile app: the decisions made and the open questions still being worked.
 4. **[The senior-engineering-lead agent](.github/agents/senior-engineering-lead.agent.md)** — the architecture everything sits inside: channels, the three layers, the async event model, the security chain.
 5. **[The EL playbook](docs/playbook/README.md)** — how delivery is governed: roles, alignment, gates, checklists.
@@ -69,8 +69,8 @@ Two pillars, held as equals — each has a dedicated page:
 **[Integration Architecture](docs/architecture/integration-architecture.md)**.
 
 **Frontend architecture** — [full pillar page](docs/architecture/frontend-architecture.md)
-- [`demo/README.md`](demo/README.md) — the agentic + generative UI pattern in depth: readable context, tools as the only path to data, generative components rendered in-chat, and human-in-the-loop approval that pauses the agent run.
-- Design-system work — a published token set matched and re-implemented as primitives (`demo/src/components/ui/`, `demo/src/app/globals.css`).
+- [`frontend/web/README.md`](frontend/web/README.md) — the agentic + generative UI pattern in depth: readable context, tools as the only path to data, generative components rendered in-chat, and human-in-the-loop approval that pauses the agent run.
+- Design-system work — a published token set matched and re-implemented as primitives (`frontend/web/src/components/ui/`, `frontend/web/src/app/globals.css`).
 - [`docs/architecture/agentic-app-workshop-notes.md`](docs/architecture/agentic-app-workshop-notes.md) — the hard mobile problems designed before code: the versioned native component-catalogue contract, streaming transport choice (SSE / WebSocket / polling), and server-as-source-of-truth state.
 
 **Integration architecture** — [full pillar page](docs/architecture/integration-architecture.md)
@@ -80,7 +80,8 @@ Two pillars, held as equals — each has a dedicated page:
 **Shared discipline**
 - [`docs/decisions/`](docs/decisions/ADR-000-index.md) — Architecture Decision Records (indexed; numbering starts at ADR-001).
 - [`.github/templates/`](.github/templates/) — 12 reusable artifact templates (ADR, HLD, LLD, TDD, NFR, API contract, runbook, post-mortem, risk register, security review, test strategy, release plan).
-- [`docs/architecture/SystemContext.drawio`](docs/architecture/SystemContext.drawio) — the system context diagram.
+- [`docs/architecture/SystemContext.drawio`](docs/architecture/SystemContext.drawio) — the full system context diagram.
+- [`docs/architecture/agentic-demo-hld.md`](docs/architecture/agentic-demo-hld.md) — the zero-cost demo HLD (channel → experience → process → provider), with a GitHub-rendering Mermaid diagram.
 
 ---
 
@@ -114,10 +115,10 @@ Stated plainly — a standard that overstates itself earns no trust.
 
 | Component | What it is | Maturity |
 |---|---|---|
-| [`demo/`](demo/) | Agentic web reference app (Next.js + CopilotKit) | **Working** — runs with an LLM key or an offline demo agent |
+| [`frontend/web/`](frontend/web/) | Agentic web reference app (Next.js + CopilotKit) | **Working** — runs with an LLM key or an offline demo agent |
 | [`.github/`](.github/) | Encoded architecture, instructions, templates | **Reference** — complete and usable as-is |
 | [`docs/playbook/`](docs/playbook/) | EL operating guide | **Reference** — complete and usable as-is |
-| [`frontend/RNModule/`](frontend/) | React Native mobile channel | **Scaffold** — designed in docs before build |
+| [`frontend/mobile/`](frontend/) | React Native mobile channel | **Scaffold** — designed in docs before build |
 | [`microservices/`](microservices/) | Backend services in Docker (.NET up; Node + Go planned) | **Scaffold** — .NET `/health` live on port 5001 |
 
 Open decisions for the mobile reference are tracked as questions Q1–Q11 in the
@@ -132,8 +133,9 @@ contract), and a written-up design-system and component-catalogue specification.
 ```
 engineering-lead/
 ├── README.md                     ← you are here
-├── demo/                         Agentic web reference app (Next.js + CopilotKit)
-├── frontend/RNModule/            React Native mobile channel (scaffold)
+├── frontend/
+│   ├── web/                      Agentic web reference app (Next.js + CopilotKit)
+│   └── mobile/                 React Native mobile channel (current focus; scaffold)
 ├── microservices/                Backend reference services in Docker (.NET / Node / Go)
 ├── docs/
 │   ├── architecture/             Workshop notes + system context diagram

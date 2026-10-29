@@ -36,7 +36,7 @@ Status: working draft. Captures what is decided, what follows from it, and what 
 
 **LLM without a hosting budget (D4).** "Only spend on a domain" rules out a paid hosted model API. That leaves two options, and I need you to pick one (Q1):
 - **A local open model** run on the MacBook. Docker Desktop on macOS may not give containers GPU access, so a model in a container could be very slow. Running the model natively on the host and calling it from the containers may be needed. To verify before we commit. A smaller model also tends to be weaker at reliable tool calling, which matters more now that the agent writes.
-- **The offline rule-based agent** from the demo (`demo/src/lib/demo-adapter.ts`). It costs nothing and is predictable, but it is not a real model.
+- **The offline rule-based agent** from the demo (`frontend/web/src/lib/demo-adapter.ts`). It costs nothing and is predictable, but it is not a real model.
 
 **Reachability from a phone.** A phone cannot reach `localhost` on the MacBook, and iOS blocks plain HTTP by default. We need a stable HTTPS address for the backend. The domain is the obvious piece. How it reaches the MacBook (a tunnel service, or port forwarding) is Q4. A MacBook is also not always on, so the demo is only up while it is awake and running.
 
@@ -75,7 +75,7 @@ Boxes and arrows are placeholders for us to argue over. Nothing in the diagram i
 
 | Container | Responsibility | Candidate tech | Open |
 |---|---|---|---|
-| RN app | Chat UI, component catalogue renderer, approval screen, auth | React Native 0.88 (`frontend/RNModule`) | Standalone React Native app (D7). |
+| RN app | Chat UI, component catalogue renderer, approval screen, auth | React Native 0.88 (`frontend/mobile`) | Standalone React Native app (D7). |
 | Agent service | Runs the LLM loop, calls tools, streams events to the app, pauses for approval | .NET, Node or Go (all three are being set up under `microservices/`) | Q2 |
 | LLM | Reasoning and tool selection | See Q1 | Q1 |
 | Business services | Cart, checkout and order rules. Validate writes, enforce idempotency | Any of the three | Q8: separate services, or inside the agent service? |
