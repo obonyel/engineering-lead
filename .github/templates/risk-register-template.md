@@ -3,7 +3,7 @@
 **Owner:** [Engineering Lead name]
 **Last reviewed:** YYYY-MM-DD
 **Next review:** YYYY-MM-DD
-**Related HLD/SAD:** [links]
+**Related HLD/TDD:** [links]
 
 **Scoring:**
 - Likelihood: 1 (rare) → 5 (near-certain)

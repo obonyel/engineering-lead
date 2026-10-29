@@ -32,7 +32,7 @@ What else should the responder check to confirm and scope the incident?
 
 - [ ] Error rate spike on [dashboard link]
 - [ ] Kafka consumer lag on topic `[topic]` > [threshold]
-- [ ] Upstream service health: [NCP BE / Kraken / IBM API Connect / Provider]
+- [ ] Upstream service health: [CopilotRuntime / FastAPI Process API / Supabase / Gemini / Tavily]
 - [ ] Recent deployment: check [CI/CD link] for deploys in last 2 hours
 - [ ] Infrastructure events: [cloud console link]
 - [ ] Correlated alerts: [related alerts that often fire together]
@@ -91,9 +91,9 @@ If a recent deployment caused the issue:
 | 60 minutes (P1) | Executive escalation; major incident declaration |
 
 **External escalations:**
-- ENTERSEKT (auth issues): [contact]
-- Kafka/Confluent support: [contact]
-- Cloud provider support: [support ticket link]
+- Supabase status / support: https://status.supabase.com
+- Google Cloud / Gemini API status: https://status.cloud.google.com
+- Cloudflare status: https://www.cloudflarestatus.com
 
 ## Post-Incident Actions
 

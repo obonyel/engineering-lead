@@ -6,8 +6,8 @@
 **Consulted:** [Names and roles]
 **Informed:** [Teams / stakeholders to be notified]
 
-**Layer:** `Experience` | `Process` | `System` | `Cross-cutting`
-**Ownership:** 🟢 Nedbank existing | 🟡 ACN-enhanced | 🟣 ACN-new
+**Layer:** `Channel` | `Experience` | `Process` | `System` | `Cross-cutting`
+**FinOps Impact:** `$0/mo` | `[+$X/mo within <= $20/mo budget]`
 **Related ADRs:** [ADR-NNN links]
 **Related TDD/HLD:** [links]
 

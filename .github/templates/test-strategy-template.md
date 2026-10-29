@@ -57,23 +57,23 @@
 **Contract pairs:**
 | Consumer | Provider | Contract location |
 |---|---|---|
-| Mobile (NCP SDK) | NCP BE | [Pact Broker link] |
-| NCP BE | Experience API | [link] |
-| Experience API | Process API | [link] |
-| Process API | [Provider System] | [link] |
+| Android App (`@copilotkit/react-native/headless`) | CopilotRuntime (`/api/copilotkit`) | `docs/architecture/frontend-architecture.md` |
+| CopilotRuntime | CrewAI Flow (`/copilotkit`) | `backend/` |
+| Android App & CrewAI Tools | FastAPI Process API (`/v1/*`) | OpenAPI 3.1 spec |
+| FastAPI Process API | CDM-Lite System Adapters & Supabase | `backend/app/system/` |
 
 ### 2.4 End-to-End (E2E) Tests
 
 **Objective:** Verify critical user journeys work across the full stack in a staging environment
-**Tools:** Playwright (Web) · Detox (React Native) · XCUITest (iOS) · Espresso (Android) · Appium
-**Who writes:** QA automation engineers
-**Environment:** Staging (with all real dependencies, test data)
-**Frequency:** Run on every release candidate; subset on every PR (smoke suite)
+**Tools:** Maestro / Detox (Android React Native) · pytest + HTTPX (FastAPI + CrewAI)
+**Who writes:** Developers / QA automation engineers
+**Environment:** Local Docker + Android Emulator / Staging
+**Frequency:** Run on every release candidate; smoke suite on every PR
 
 **Critical journeys (must always pass before release):**
-1. [User journey 1 — e.g., Login → View balance → Initiate payment → Confirm via OOBV → View receipt]
-2. [User journey 2]
-3. [HMS-specific journey — verify on Huawei test device]
+1. Onboarding: `+27` Auth → 13-digit SA ID FICA check → Virtual Card + `@sahara.shap` setup → Dashboard
+2. Agentic Transfer + HITL: Prompt *Jabu* → Recipient & PayShap (`R0`) resolution → Synthesis slider → Android `BiometricPrompt` clearance → Ledger settlement & receipt
+3. Guardrail Enforcement: Verify agent cannot mutate ledger without confirmed `approval_requests` row or duplicate `X-Idempotency-Key`
 
 ### 2.5 Performance Tests
 
@@ -153,7 +153,7 @@
 - [ ] Performance NFR targets met in latest load test run
 - [ ] Security scan: zero critical/high findings unmitigated
 - [ ] Contract tests passing in Pact Broker
-- [ ] Critical E2E journeys passing (including HMS device)
+- [ ] Critical E2E journeys passing on Android target environment
 
 ## 6. Defect Management
 

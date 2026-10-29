@@ -20,15 +20,15 @@
 | Refresh token TTL ≤ 24 hours (banking session) | ✅ | ⬜ | |
 | Session invalidation on logout | ✅ | ⬜ | |
 | Concurrent session limits enforced | ✅ | ⬜ | |
-| Step-up (OOBV/ENTERSEKT) for high-risk actions | ✅ | ⬜ | Define threshold |
+| Step-up (Android BiometricPrompt + two-phase HITL) for money-moving actions | ✅ | ⬜ | Define threshold (default > R500) |
 
 ## 2. Authorisation
 
 | Control | Required | Status | Notes |
 |---|---|---|---|
-| RBAC/ABAC enforced at every API endpoint | ✅ | ⬜ | |
+| RBAC/RLS enforced at every API endpoint and Supabase table | ✅ | ⬜ | |
 | Authorization checked at each service hop (no implicit trust) | ✅ | ⬜ | |
-| AZP policy for resource-level authorisation | ✅ | ⬜ | |
+| Resource-level ownership verified against authenticated `user_id` | ✅ | ⬜ | |
 | Consent record checked before PII access | ✅ | ⬜ | PoPIA |
 | OAuth scope matches data accessed | ✅ | ⬜ | Least-privilege |
 
@@ -75,21 +75,19 @@
 | Immutable audit event on every state change | ✅ | ⬜ | Append-only Kafka topic |
 | Audit fields: timestamp, actor, action, resource, before/after hash | ✅ | ⬜ | |
 | Audit log retention: 7 years | ✅ | ⬜ | Regulatory minimum |
-| Tamper-evident storage (no UPDATE/DELETE on audit records) | ✅ | ⬜ | |
-| ELK/GRFS integration for forensic search | ✅ | ⬜ | |
+| Tamper-evident storage (no UPDATE/DELETE on `audit_events` / posted `ledger_entries`) | ✅ | ⬜ | |
+| Structured correlationId search across logs and audit rows | ✅ | ⬜ | |
 
-## 7. Mobile Security (complete for mobile-facing features)
+## 7. Mobile Security (Android Channel)
 
 | Control | Required | Status | Notes |
 |---|---|---|---|
-| Certificate pinning (SPKI hash + backup pin) | ✅ | ⬜ | |
-| Root/jailbreak detection → risk engine signal | ✅ | ⬜ | Do not silently block |
-| Biometric keys hardware-backed (Secure Enclave/StrongBox/HMS FIDO) | ✅ | ⬜ | |
-| Private keys non-exportable | ✅ | ⬜ | |
-| WebView JS bridge access restricted to approved URLs | ✅ | ⬜ | |
+| TLS 1.3 enforced on production endpoints (cleartext restricted to local debug) | ✅ | ⬜ | |
+| Root/compromised device signal evaluated | ✅ | ⬜ | Play Integrity / device checks |
+| Biometric keys hardware-backed (Android Keystore / StrongBox `BiometricPrompt`) | ✅ | ⬜ | |
+| Session tokens stored in `expo-secure-store` (never plain `AsyncStorage`) | ✅ | ⬜ | |
+| Line-1 `react-native-get-random-values` CSPRNG loaded before `@copilotkit/react-native/polyfills` | ✅ | ⬜ | Prevents `Math.random` fallback |
 | Deep link parameters validated server-side | ✅ | ⬜ | |
-| ENTERSEKT device binding before transaction capability | ✅ | ⬜ | |
-| App runs on HMS Safety Detect on Huawei devices | ✅ | ⬜ | GMS Play Integrity equivalent |
 
 ## 8. Agentic / LLM Controls (complete if Agentic layer is involved)
 

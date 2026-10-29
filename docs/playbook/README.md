@@ -1,6 +1,6 @@
 # Engineering Lead Playbook
 
-Operating guide for the Engineering Lead (EL) on the banking super app programme (Experience / Process / System layers, multi-platform mobile, Azure + on-prem integration).
+Operating guide for the Engineering Lead (EL) on the agentic banking super app programme (Channel / Experience / Process / System layers, Android mobile client, cloud-native backend + provider integration).
 
 Modelled on the [Code-With Engineering Playbook](https://microsoft.github.io/code-with-engineering-playbook/design/design-patterns/cloud-resource-design-guidance/). That page boils down to one principle, which this playbook generalises from cloud resources to everything the EL decides:
 

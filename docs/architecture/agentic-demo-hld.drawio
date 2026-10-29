@@ -1,87 +1,92 @@
 <mxfile host="app.diagrams.net" type="device">
-  <diagram name="Agentic Banking Demo HLD" id="agentic-demo-hld">
-    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="900" math="0" shadow="0">
+  <diagram name="Sahara Mzansi Android Demo HLD" id="agentic-demo-hld">
+    <mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="920" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
-        <mxCell id="title" value="Agentic Banking Demo — High-Level Design (zero-cost stack)" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" vertex="1" parent="1">
-          <mxGeometry x="40" y="10" width="760" height="30" as="geometry" />
+        <mxCell id="title" value="Sahara Mzansi — High-Level Design (Android Only · &lt;= $20/mo Stack)" style="text;html=1;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="900" height="30" as="geometry" />
         </mxCell>
 
-        <mxCell id="bandChannel" value="CHANNEL" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="bandChannel" value="1. CHANNEL LAYER · Android Only" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="40" y="50" width="760" height="130" as="geometry" />
         </mxCell>
-        <mxCell id="mobile" value="Mobile app&#10;(Expo · React Native)&#10;— current focus —" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="80" y="90" width="200" height="75" as="geometry" />
+        <mxCell id="mobile" value="Sahara Mzansi Android App&#10;(React Native · Expo · TypeScript)&#10;Onboarding · Dashboard · BiometricPrompt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="70" y="90" width="310" height="75" as="geometry" />
         </mxCell>
-        <mxCell id="web" value="Web app&#10;(Next.js · micro-frontends)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="300" y="90" width="180" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="copilot" value="CopilotKit + AG-UI&#10;agentic + generative UI&#10;human-in-the-loop approval" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="510" y="90" width="250" height="75" as="geometry" />
+        <mxCell id="copilot" value="@copilotkit/react-native/headless (AG-UI)&#10;Line-1 CSPRNG Polyfill · Native GenUI Catalogue&#10;useRenderTool · HITL Clearance Gate" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="90" width="350" height="75" as="geometry" />
         </mxCell>
 
-        <mxCell id="cloudflare" value="Cloudflare — DNS · TLS · CDN (fronts Cloud Run)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="280" y="193" width="280" height="34" as="geometry" />
+        <mxCell id="cloudflare" value="Cloudflare Edge — DNS · TLS 1.3 · WAF (~$1/mo custom domain)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="195" width="340" height="34" as="geometry" />
         </mxCell>
 
-        <mxCell id="bandExp" value="EXPERIENCE LAYER   ·   Google Cloud Run (Docker)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
-          <mxGeometry x="40" y="240" width="760" height="130" as="geometry" />
+        <mxCell id="bandExp" value="2. EXPERIENCE LAYER · Google Cloud Run (Scales to Zero)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="40" y="245" width="760" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="agent" value="Agent service&#10;CopilotKit runtime + AG-UI + Vercel AI SDK&#10;readable context · tools · approval gate&#10;NO business rules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="90" y="280" width="440" height="80" as="geometry" />
+        <mxCell id="runtime" value="CopilotKit Runtime v2&#10;(/api/copilotkit)&#10;JWT Guard · Rate Limit · AG-UI Bridge" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="70" y="285" width="250" height="85" as="geometry" />
         </mxCell>
-        <mxCell id="gemini" value="Gemini&#10;Google AI Studio API&#10;(free tier)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="850" y="280" width="180" height="80" as="geometry" />
+        <mxCell id="crew" value="CrewAI Flows (Flow[SaharaAgentState] / CopilotKitState)&#10;Jabu (Treasury &amp; Wealth) · Kagiso (Fee Sentinel) · Thabo (Utilities)&#10;copilotkit_emit_state live telemetry · NO ledger writes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="350" y="285" width="420" height="85" as="geometry" />
         </mxCell>
-
-        <mxCell id="bandProc" value="PROCESS LAYER   ·   Google Cloud Run (Docker)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
-          <mxGeometry x="40" y="400" width="760" height="130" as="geometry" />
+        <mxCell id="gemini" value="Google Gemini 2.5 Flash&#10;($0 Free -&gt; $2-$8/mo Paid&#10;$10/mo hard billing cap)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="840" y="245" width="210" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="business" value="Business services&#10;cart · checkout (saga) · order&#10;validation · idempotency keys · audit log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="90" y="440" width="470" height="80" as="geometry" />
-        </mxCell>
-
-        <mxCell id="bandProv" value="PROVIDER / SYSTEM LAYER" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
-          <mxGeometry x="40" y="560" width="760" height="150" as="geometry" />
-        </mxCell>
-        <mxCell id="mock" value="Mock provider services&#10;catalogue · payment-mock&#10;(CDM-lite adapters)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="90" y="600" width="300" height="85" as="geometry" />
-        </mxCell>
-        <mxCell id="supabase" value="Supabase&#10;Postgres · Auth · RLS&#10;(system of record)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="440" y="600" width="300" height="85" as="geometry" />
+        <mxCell id="tavily" value="Tavily Search API (Free Tier)&#10;Grounded SA Financial Literacy&#10;(resbank · fsca · sars · gov.za)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="840" y="325" width="210" height="70" as="geometry" />
         </mxCell>
 
-        <mxCell id="legend" value="Mobile: Expo + EAS Build · Android via Firebase App Distribution (free) · iOS via Expo Go (real-device iOS later needs Apple Developer, $99/yr)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#f5f5f5;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="40" y="740" width="990" height="40" as="geometry" />
+        <mxCell id="bandProc" value="3. PROCESS LAYER · FastAPI (/v1/*)" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="40" y="410" width="760" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="business" value="Banking Domain Services&#10;FICA 13-Digit ID Validator · Safe-Float &amp; Budget Guardrails · Two-Phase HITL Approval Gate&#10;Bounded Payment Scheduler · X-Idempotency-Key · Double-Entry Ledger Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="70" y="450" width="700" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bandProv" value="4. SYSTEM LAYER · Supabase Free Tier + CDM-Lite Adapters" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="565" width="760" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="mock" value="Simulated SA Rail Adapters (CDM-Lite)&#10;PayShapSimAdapter · FicaSimAdapter&#10;UtilitySimAdapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="70" y="605" width="310" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="supabase" value="Supabase (Postgres · Auth · RLS · pgvector · pg_cron)&#10;BIGINT Integer-Cent Ledger · Append-Only audit_events&#10;Literacy Vectors (System of Record)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="420" y="605" width="350" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend" value="Android Only: Expo + EAS Free + Firebase App Distribution ($0) · Web &amp; iOS Descoped · Total Spend ~$1-$9/mo (&lt;= $20/mo hard cap)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#f5f5f5;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="740" width="1010" height="40" as="geometry" />
         </mxCell>
 
         <mxCell id="e1" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="mobile" target="cloudflare">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e2" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="web" target="cloudflare">
+        <mxCell id="e2" value="AG-UI Stream" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="cloudflare" target="runtime">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e3" value="HTTPS" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="cloudflare" target="agent">
+        <mxCell id="e3" value="Remote Endpoint" style="endArrow=block;startArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="runtime" target="crew">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e4" value="LLM · tool-calling" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="agent" target="gemini">
+        <mxCell id="e4" value="Tool-calling" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="crew" target="gemini">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e5" value="validated tool calls" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="agent" target="business">
+        <mxCell id="e5" value="Grounded search" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="crew" target="tavily">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e6" value="CDM" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="business" target="mock">
+        <mxCell id="e6" value="Stage proposals &amp; reads" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="crew" target="business">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e7" value="persist · idempotency · audit" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="business" target="supabase">
+        <mxCell id="e7" value="CDM-Lite" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="business" target="mock">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e8" value="Auth session · RLS" style="endArrow=block;html=1;dashed=1;fontSize=10;exitX=1;exitY=0.5;entryX=1;entryY=0;" edge="1" parent="1" source="mobile" target="supabase">
+        <mxCell id="e8" value="ACID Ledger · Idempotency · Audit" style="endArrow=block;html=1;fontSize=10;" edge="1" parent="1" source="business" target="supabase">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-
+        <mxCell id="e9" value="OTP / OAuth" style="endArrow=block;html=1;dashed=1;fontSize=10;" edge="1" parent="1" source="mobile" target="supabase">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

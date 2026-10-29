@@ -35,7 +35,7 @@ Considerations to confirm with Platform:
 
 EL questions:
 - Does this engagement need a new subscription, or does it fit an existing one? (Default: fit existing.)
-- Where does it sit relative to the connectivity hub to on-prem (IBM API Connect, ESB/DataPower, core systems)?
+- Where does it sit relative to external provider APIs and systems of record?
 - Which data classifications will it hold, and is that allowed in the target region and subscription?
 
 ## 4.4 Environment strategy

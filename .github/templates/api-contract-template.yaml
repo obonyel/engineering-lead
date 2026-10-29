@@ -6,21 +6,20 @@ info:
     [Brief description of this API's purpose and the bounded context it serves.]
 
     **Layer:** Experience | Process | System
-    **Ownership:** Nedbank existing | ACN-enhanced | ACN-new
     **CDM version:** [X.X]
   contact:
-    name: "[Squad name]"
-    email: "[squad@bank.co.za]"
+    name: "Sahara Mzansi Engineering"
   license:
-    name: "Proprietary — Internal Use Only"
+    name: "Apache-2.0"
+    url: "https://www.apache.org/licenses/LICENSE-2.0"
 
 servers:
-  - url: "https://api-internal.bank.co.za/v1"
-    description: "Production"
-  - url: "https://api-staging.bank.co.za/v1"
-    description: "Staging"
-  - url: "http://localhost:8080/v1"
-    description: "Local development"
+  - url: "https://api.saharamzansi.example/v1"
+    description: "Production (Cloudflare -> Cloud Run)"
+  - url: "http://10.0.2.2:8000/v1"
+    description: "Local Android Emulator development"
+  - url: "http://localhost:8000/v1"
+    description: "Local host development"
 
 security:
   - BearerAuth: []

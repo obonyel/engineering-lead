@@ -8,8 +8,8 @@
 **Related Epic/Ticket:** [JIRA/GitHub link]
 **Related ADR(s):** [ADR-NNN links]
 
-**Layer:** `Experience` | `Process` | `System` | `Cross-cutting`
-**Ownership:** 🟢 Nedbank | 🟡 ACN-enhanced | 🟣 ACN-new
+**Layer:** `Channel` | `Experience` | `Process` | `System` | `Cross-cutting`
+**FinOps Impact:** `$0/mo` | `[+$X/mo within <= $20/mo budget]`
 
 ---
 
@@ -37,11 +37,10 @@ Constraints: [technical, compliance, timeline, team capacity]
 
 | Attribute | Value |
 |---|---|
-| Primary layer | Experience / Process / System |
-| Ownership | 🟢/🟡/🟣 |
-| Consuming channels | Mobile / Web / Conversational |
-| Upstream dependencies | [list services this depends on] |
-| Downstream dependents | [list services that depend on this] |
+| Primary layer | Channel / Experience / Process / System |
+| Consuming channel | Android Mobile App (`Expo` + `@copilotkit/react-native/headless`) |
+| Upstream dependencies | [list services/modules this depends on] |
+| Downstream dependents | [list services/modules that depend on this] |
 
 ## 5. Proposed Solution
 
@@ -49,15 +48,13 @@ High-level narrative of the approach. Describe the "what" and "why" before the "
 
 ### 5.1 Architecture Diagram
 
-```
-[C4 Container or Sequence diagram — use Mermaid]
-
+```mermaid
 sequenceDiagram
-    participant Mobile
-    participant NCP_BE
-    participant ExperienceAPI
-    participant ProcessAPI
-    participant ProviderSystem
+    participant Android as Android App (AG-UI)
+    participant Runtime as CopilotRuntime (/api/copilotkit)
+    participant Crew as CrewAI Flow (Experience)
+    participant Process as FastAPI Process Layer (/v1)
+    participant DB as Supabase Postgres
 ```
 
 ### 5.2 Component Responsibilities
