@@ -28,8 +28,10 @@ cd web && npm install && npm run dev   # http://localhost:3000
 ## mobile/
 
 The mobile channel and current focus — **React Native via Expo**. Expo is chosen so the app
-builds without full local Xcode (EAS Build), distributes for free (Android APK via GitHub
-Releases, iOS via Expo Go), and ships OTA updates. Scaffold only for now; the mobile
-toolchain and the native component-catalogue contract are being decided in
+builds without full local Xcode (EAS Build) and ships OTA updates. Distribution: **Android
+via Firebase App Distribution** (free); **iOS via Expo Go** ($0 for the demo — real-device
+iOS later needs an Apple Developer account, $99/yr, after which Firebase App Distribution
+serves iOS too). Scaffold only for now; the mobile toolchain and the native
+component-catalogue contract are being decided in
 [docs/architecture/agentic-app-workshop-notes.md](../docs/architecture/agentic-app-workshop-notes.md)
 before implementation.

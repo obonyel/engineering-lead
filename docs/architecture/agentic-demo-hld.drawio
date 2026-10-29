@@ -53,7 +53,7 @@
           <mxGeometry x="440" y="600" width="300" height="85" as="geometry" />
         </mxCell>
 
-        <mxCell id="legend" value="Mobile distribution: Expo + EAS Build · free Android APK via GitHub Releases · iOS via Expo Go (TestFlight needs Apple Developer, $99/yr)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#f5f5f5;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="legend" value="Mobile: Expo + EAS Build · Android via Firebase App Distribution (free) · iOS via Expo Go (real-device iOS later needs Apple Developer, $99/yr)" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=10;fillColor=#f5f5f5;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="40" y="740" width="990" height="40" as="geometry" />
         </mxCell>
 

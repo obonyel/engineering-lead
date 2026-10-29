@@ -57,8 +57,10 @@ flowchart TB
 
 ### Channel
 - **Mobile (React Native via Expo)** — the current focus. Expo gives free cloud builds
-  (EAS), free distribution (Android APK via GitHub Releases, iOS via Expo Go), and OTA
-  updates — and removes the local full-Xcode requirement.
+  (EAS) and OTA updates, and removes the local full-Xcode requirement. Distribution:
+  **Android via Firebase App Distribution** (free); **iOS via Expo Go** ($0 for the demo).
+  Putting the app on real iPhones later needs an Apple Developer account ($99/yr) — at which
+  point Firebase App Distribution serves iOS too.
 - **Web (Next.js, micro-frontends)** — a shell composing independently deliverable feature
   frontends, so squads ship slices without a monolith release.
 - Both channels use **CopilotKit + AG-UI** for the agentic chat and **generative UI**, and
@@ -103,10 +105,12 @@ flowchart TB
 | Backend hosting | Google Cloud Run (Docker, scales to zero) | Free at demo scale |
 | Database / Auth | Supabase free tier (Postgres · Auth · RLS) | Free |
 | Edge / domain | Cloudflare (free plan) + custom domain | ~domain only |
-| Mobile build/dist | Expo + EAS; Android APK via GitHub Releases; iOS via Expo Go | Free* |
+| Mobile build | Expo + EAS Build (no local Xcode needed) | Free |
+| Mobile dist | Android via Firebase App Distribution; iOS via Expo Go | Free* |
 
-\* True iOS TestFlight / ad-hoc distribution needs an Apple Developer account ($99/yr); every
-other path here is free.
+\* iOS distribution to real devices (via Firebase App Distribution or TestFlight) needs an
+Apple Developer account ($99/yr) — deferred for the demo by using Expo Go. Every other path
+here is free.
 
 ---
 
